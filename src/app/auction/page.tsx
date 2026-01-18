@@ -219,14 +219,16 @@ export default function AuctionPage() {
                                     </Button>
                                 )}
 
-                                <Button
-                                    variant="destructive"
-                                    className="w-full bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/50 h-9 text-sm"
-                                    onClick={passPlayer}
-                                >
-                                    <XCircle className="w-3 h-3 mr-2" />
-                                    Pass (Unsold)
-                                </Button>
+                                {auction.bidHistory.length === 0 && (
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/50 h-9 text-sm"
+                                        onClick={passPlayer}
+                                    >
+                                        <XCircle className="w-3 h-3 mr-2" />
+                                        Pass (Unsold)
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>
