@@ -12,187 +12,195 @@ export function PresentationView() {
     const currentPlayer = currentPlayerId ? players.find(p => p.id === currentPlayerId) : null;
     const lastBidder = lastBidderTeamId ? teams.find(t => t.id === lastBidderTeamId) : null;
 
-    // Get sold history (most recent first)
-    const recentSales = [...auction.history].slice(0, 3);
-
     return (
-        <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden font-sans">
-            <div className="max-w-[1920px] mx-auto h-full grid grid-cols-12 gap-4">
+        <div className="h-screen bg-slate-950 text-white p-6 overflow-hidden font-sans flex flex-col gap-6">
 
-                {/* LEFT COLUMN: Main Auction Stage */}
-                <div className="col-span-8 flex flex-col gap-4">
-                    {/* Header */}
-                    <header className="flex justify-between items-center mb-2">
-                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text py-1">
-                            {state.config.tournamentName}
-                        </h1>
-                        <div className="text-xl text-slate-400">
-                            Live Auction
-                        </div>
-                    </header>
+            {/* 1. BROADCAST HEADER */}
+            <header className="flex justify-between items-center border-b border-white/10 pb-4">
+                <div className="flex flex-col">
+                    <h1 className="text-5xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text py-1 tracking-tighter">
+                        {state.config.tournamentName}
+                    </h1>
+                    <span className="text-slate-500 font-bold uppercase tracking-[0.2em] text-sm">Official Auction Broadcast</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="px-4 py-2 bg-red-600 rounded-md font-black text-sm tracking-tighter flex items-center gap-2 animate-pulse">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                        LIVE
+                    </div>
+                </div>
+            </header>
 
-                    {/* Main Stage Card */}
-                    <Card className="h-[550px] bg-slate-900/50 border-slate-800 p-4 flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-xl">
-                        <AnimatePresence mode="wait">
-                            {currentPlayer ? (
-                                <motion.div
-                                    key={currentPlayer.id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 1.1 }}
-                                    className="w-full flex flex-col items-center z-10"
-                                >
-                                    <div className="w-full flex flex-col items-center justify-center gap-2">
-                                        {/* Player Initials/Image Placeholer */}
-                                        <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center text-5xl font-black shadow-[0_0_40px_rgba(37,99,235,0.2)] border-2 border-white/10">
+            {/* 2. MAIN AUCTION STAGE (HORIZONTAL BANNER) */}
+            <section className="w-full">
+                <Card className="bg-slate-900/40 border-white/10 backdrop-blur-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                    <AnimatePresence mode="wait">
+                        {currentPlayer ? (
+                            <motion.div
+                                key={currentPlayer.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="flex h-[320px]"
+                            >
+                                {/* PLAYER INFO (LEFT) */}
+                                <div className="w-[45%] p-8 flex items-center gap-8 border-r border-white/5 bg-gradient-to-r from-blue-600/10 to-transparent">
+                                    <div className="relative">
+                                        <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-6xl font-black shadow-[0_0_40px_rgba(37,99,235,0.3)] border-4 border-white/10">
                                             {currentPlayer.name.charAt(0)}
                                         </div>
-
-                                        <div className="text-center space-y-1">
-                                            <h2 className="text-4xl font-bold tracking-tight text-white">
-                                                {currentPlayer.name}
-                                            </h2>
-                                            <div className="flex gap-2 justify-center">
-                                                <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-sm font-medium border border-slate-700">
-                                                    {currentPlayer.role}
-                                                </span>
-                                                <span className="px-3 py-1 rounded-full bg-emerald-900/40 text-emerald-400 text-sm font-medium border border-emerald-800">
-                                                    Base: ₹{currentPlayer.basePrice.toLocaleString()}
-                                                </span>
-                                            </div>
+                                        <div className="absolute -bottom-2 -right-2 bg-slate-900 border border-white/20 px-3 py-1 rounded-lg text-xs font-bold text-blue-400 uppercase tracking-widest shadow-xl">
+                                            {currentPlayer.role.split('-')[0]}
                                         </div>
                                     </div>
+                                    <div className="space-y-2">
+                                        <h2 className="text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                                            {currentPlayer.name}
+                                        </h2>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="text-slate-400 uppercase text-xs font-bold tracking-widest">Base Price</div>
+                                            <div className="text-3xl font-bold text-emerald-400">₹{currentPlayer.basePrice.toLocaleString()}</div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    {/* Bidding Area */}
-                                    <div className="w-full mt-4 mb-2 bg-slate-950/80 rounded-xl border border-slate-800 p-4 text-center relative overflow-hidden">
-
-                                        {/* Background pulse effect for active bidding */}
+                                {/* BIDDING INFO (RIGHT) */}
+                                <div className="flex-1 p-8 flex flex-col justify-center items-center text-center relative">
+                                    {/* Pulse Effect Background */}
+                                    <AnimatePresence>
                                         {lastBidder && (
                                             <motion.div
                                                 key={`pulse-${currentBid}`}
-                                                initial={{ opacity: 0.5, scale: 1 }}
+                                                initial={{ opacity: 0.3, scale: 0.8 }}
                                                 animate={{ opacity: 0, scale: 1.5 }}
-                                                transition={{ duration: 1 }}
-                                                className="absolute inset-0 bg-blue-500/10 z-0"
+                                                className="absolute inset-0 bg-blue-500/20 z-0"
                                             />
                                         )}
+                                    </AnimatePresence>
 
-                                        <p className="text-slate-500 text-base font-medium uppercase tracking-wider mb-0 relative z-10">Current Bid</p>
-                                        <motion.div
-                                            key={`text-${currentBid}`}
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            className="text-6xl font-black text-white relative z-10 tabular-nums tracking-tight"
-                                        >
-                                            ₹{currentBid.toLocaleString()}
-                                        </motion.div>
-
-                                        {lastBidder && (
+                                    <div className="relative z-10 space-y-4">
+                                        <div className="space-y-0">
+                                            <p className="text-slate-500 text-lg font-black uppercase tracking-[0.3em]">Current Bid</p>
                                             <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="mt-2 flex items-center justify-center gap-2 relative z-10"
+                                                key={currentBid}
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="text-9xl font-black text-white leading-none tabular-nums tracking-tighter glow-text"
                                             >
-                                                <span className="text-slate-400 text-lg">Held by</span>
-                                                <span className="text-xl font-bold text-blue-400">
-                                                    {lastBidder.name}
-                                                </span>
+                                                ₹{currentBid.toLocaleString()}
                                             </motion.div>
+                                        </div>
+
+                                        {lastBidder ? (
+                                            <motion.div
+                                                initial={{ y: 20, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                className="flex flex-col items-center"
+                                            >
+                                                <div className="text-slate-400 uppercase text-sm font-bold tracking-widest mb-1">Winning Bid by</div>
+                                                <div className="px-6 py-2 bg-blue-600 rounded-full text-2xl font-black text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]">
+                                                    {lastBidder.name}
+                                                </div>
+                                            </motion.div>
+                                        ) : (
+                                            <div className="text-slate-500 text-xl font-bold italic animate-pulse">Waiting for bids...</div>
                                         )}
                                     </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    className="text-center space-y-4 opacity-50"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 0.5 }}
-                                >
-                                    <div className="text-7xl">⏳</div>
-                                    <h2 className="text-2xl font-bold">Waiting for next player...</h2>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <div className="h-[320px] flex items-center justify-center bg-slate-900/20">
+                                <div className="text-center space-y-4 opacity-30">
+                                    <div className="text-8xl">🏟️</div>
+                                    <h2 className="text-3xl font-black uppercase tracking-widest">Waiting for next player</h2>
+                                </div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </Card>
+            </section>
 
-                        {/* Recent Activity/Sold Overlay */}
-                        <AnimatePresence>
-                            {!isAuctionActive && recentSales.length > 0 && !currentPlayer && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-20"
-                                >
-                                    <div className="text-center p-8 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full">
-                                        <h3 className="text-xl font-bold text-slate-400 mb-4">Recently Sold</h3>
-                                        {(() => {
-                                            const lastSale = recentSales[0];
-                                            const player = players.find(p => p.id === lastSale.playerId);
-                                            const team = teams.find(t => t.id === lastSale.soldToTeamId);
-                                            if (!player || !team) return null;
-
-                                            return (
-                                                <div className="space-y-4">
-                                                    <div className="text-4xl font-black text-white">{player.name}</div>
-                                                    <div className="text-xl text-slate-400">sold to</div>
-                                                    <div className="text-3xl font-bold text-blue-400">{team.name}</div>
-                                                    <div className="text-2xl font-bold text-emerald-400 mt-2">₹{lastSale.soldPrice.toLocaleString()}</div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </Card>
+            {/* 3. TEAM STANDINGS (BOTTOM GRID) */}
+            <section className="flex-1 overflow-hidden flex flex-col">
+                <div className="flex items-center gap-4 mb-4">
+                    <h3 className="text-2xl font-black uppercase tracking-widest text-slate-400">Team Standings</h3>
+                    <div className="h-px flex-1 bg-white/10"></div>
                 </div>
 
-                {/* RIGHT COLUMN: Team Standings */}
-                <div className="col-span-4 flex flex-col h-full overflow-hidden">
-                    <h3 className="text-2xl font-bold text-slate-300 mb-6 px-2">Team Standings</h3>
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                        {teams
-                            .sort((a, b) => b.remainingBudget - a.remainingBudget)
-                            .map((team, index) => (
+                <div className="grid grid-cols-4 gap-4 overflow-y-auto pr-2 custom-scrollbar pb-6">
+                    {teams
+                        .sort((a, b) => b.remainingBudget - a.remainingBudget)
+                        .map((team) => {
+                            const teamPlayers = players.filter(p => p.soldToTeamId === team.id);
+                            return (
                                 <motion.div
                                     layout
                                     key={team.id}
-                                    className={`p-6 rounded-2xl border ${lastBidderTeamId === team.id
-                                        ? 'bg-blue-900/20 border-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.15)] scale-105 ml-2 mr-2'
-                                        : 'bg-slate-900/60 border-slate-800'
-                                        } transition-all duration-300`}
+                                    className={`relative group rounded-2xl border transition-all duration-300 ${lastBidderTeamId === team.id
+                                            ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.2)]'
+                                            : 'bg-slate-900/40 border-white/5'
+                                        }`}
                                 >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h4 className={`text-xl font-bold ${lastBidderTeamId === team.id ? 'text-blue-400' : 'text-white'}`}>
-                                                {team.name}
-                                            </h4>
-                                            <p className="text-sm text-slate-400 mt-1">
-                                                {team.players.length} players
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-2xl font-bold text-emerald-400">
-                                                ₹{team.remainingBudget.toLocaleString()}
+                                    <div className="p-4 flex flex-col h-full gap-3">
+                                        <div className="flex justify-between items-start">
+                                            <div className="max-w-[60%]">
+                                                <h4 className="text-lg font-black uppercase tracking-tight truncate text-white">
+                                                    {team.name}
+                                                </h4>
+                                                <div className="text-[10px] text-slate-500 font-bold uppercase">Purse Remaining</div>
+                                                <div className="text-xl font-black text-emerald-400 leading-none">
+                                                    ₹{team.remainingBudget.toLocaleString()}
+                                                </div>
                                             </div>
-                                            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Available</p>
+                                            <div className="text-right">
+                                                <div className="text-lg font-black text-white/20 group-hover:text-white/40 transition-colors">#{teamPlayers.length}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Slots Indicator */}
-                                    <div className="flex gap-1">
-                                        {Array.from({ length: 15 }).map((_, i) => (
-                                            <div
-                                                key={i}
-                                                className={`h-1.5 flex-1 rounded-full ${i < team.players.length
-                                                    ? 'bg-blue-500'
-                                                    : 'bg-slate-700'
-                                                    }`}
-                                            />
-                                        ))}
+
+                                        {/* COMPACT PLAYER TABLE */}
+                                        <div className="bg-black/20 rounded-xl overflow-hidden border border-white/5">
+                                            <div className="grid grid-cols-12 px-2 py-1.5 border-b border-white/5 text-[9px] font-black uppercase tracking-widest text-slate-500 bg-white/5">
+                                                <div className="col-span-8">Player</div>
+                                                <div className="col-span-4 text-right">Price</div>
+                                            </div>
+                                            <div className="max-h-[140px] overflow-y-auto custom-scrollbar-mini">
+                                                {teamPlayers.length === 0 ? (
+                                                    <div className="p-4 text-[10px] text-center text-slate-600 italic">No squads yet</div>
+                                                ) : (
+                                                    teamPlayers.map(p => (
+                                                        <div key={p.id} className="grid grid-cols-12 px-2 py-1.5 border-b border-white/5 items-center last:border-0 hover:bg-white/5 transition-colors">
+                                                            <div className="col-span-8">
+                                                                <div className="text-[11px] font-bold text-slate-200 truncate">{p.name}</div>
+                                                                <div className="text-[8px] text-slate-500 uppercase">{p.role.split('-')[0]}</div>
+                                                            </div>
+                                                            <div className="col-span-4 text-right text-[10px] font-black text-blue-400">
+                                                                ₹{((p.soldPrice || 0) / 100000).toFixed(1)}L
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </motion.div>
-                            ))}
-                    </div>
+                            );
+                        })}
                 </div>
-            </div>
+            </section>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+                
+                .custom-scrollbar-mini::-webkit-scrollbar { width: 2px; }
+                .custom-scrollbar-mini::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar-mini::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+
+                .glow-text {
+                    text-shadow: 0 0 40px rgba(255,255,255,0.2), 0 0 80px rgba(59,130,246,0.3);
+                }
+            `}</style>
         </div>
     );
 }
