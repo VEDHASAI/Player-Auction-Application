@@ -186,7 +186,7 @@ export default function AuctionPage() {
                                     <div className="p-2 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
                                         <Gavel className="w-4 h-4 text-green-400" />
                                         <div>
-                                            <div className="text-[10px] text-green-400 uppercase font-bold leading-none mb-1">Winning Team</div>
+                                            <div className="text-[10px] text-green-400 uppercase font-bold leading-none mb-1">Bidding Team</div>
                                             <div className="font-bold text-white text-sm">
                                                 {teams.find(t => t.id === auction.lastBidderTeamId)?.name}
                                             </div>

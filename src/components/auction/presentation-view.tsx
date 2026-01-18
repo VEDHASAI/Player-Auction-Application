@@ -98,7 +98,7 @@ export function PresentationView() {
                                                 animate={{ y: 0, opacity: 1 }}
                                                 className="flex flex-col items-center"
                                             >
-                                                <div className="text-slate-400 uppercase text-[10px] font-bold tracking-widest mb-1">Winning Bid by</div>
+                                                <div className="text-slate-400 uppercase text-[10px] font-bold tracking-widest mb-1">Current Bid by</div>
                                                 <div className="px-5 py-1.5 bg-blue-600 rounded-full text-xl font-black text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]">
                                                     {lastBidder.name}
                                                 </div>

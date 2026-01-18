@@ -10,8 +10,8 @@ interface TeamStripProps {
 
 export function TeamStrip({ teams, lastBidderTeamId, currentBid }: TeamStripProps) {
     return (
-        <div className="w-full overflow-x-auto pb-2 pt-1 scrollbar-hide">
-            <div className="flex gap-3 min-w-max px-2">
+        <div className="w-full overflow-x-auto pb-2 pt-2 scrollbar-hide px-4 md:px-12">
+            <div className="flex gap-3 justify-center min-w-max py-1">
                 {teams.map((team) => {
                     const isLeader = lastBidderTeamId === team.id;
                     const displayedBudget = isLeader ? (team.remainingBudget - currentBid) : team.remainingBudget;
