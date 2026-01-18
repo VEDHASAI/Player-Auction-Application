@@ -82,7 +82,7 @@ export default function TeamsPage() {
     return (
         <div className="container mx-auto p-6 space-y-8 pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 text-transparent bg-clip-text py-2">
                     Team Squads & Budgets
                 </h1>
                 <Button

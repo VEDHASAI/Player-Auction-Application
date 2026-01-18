@@ -81,7 +81,7 @@ export default function AuctionPage() {
             <div className="container mx-auto p-6 space-y-8 pb-20">
 
                 <div className="flex items-center gap-4">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text py-2">
                         Waiting Room
                     </h1>
                     <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm font-mono border border-slate-700">

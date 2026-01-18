@@ -23,7 +23,7 @@ export function PresentationView() {
                 <div className="col-span-8 flex flex-col gap-4">
                     {/* Header */}
                     <header className="flex justify-between items-center mb-2">
-                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
+                        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text py-1">
                             {state.config.tournamentName}
                         </h1>
                         <div className="text-xl text-slate-400">
