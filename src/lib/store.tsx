@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { Player, Team, AuctionState, AuctionHistoryItem, DEFAULT_BUDGET } from './types';
+import { Player, Team, AuctionState, AuctionHistoryItem, DEFAULT_BUDGET, SquadRules } from './types';
 
 // State Definition
 interface AppState {
@@ -10,6 +10,7 @@ interface AppState {
     auction: AuctionState;
     config: {
         tournamentName: string;
+        rules: SquadRules;
     };
 }
 
@@ -27,6 +28,7 @@ const initialState: AppState = {
     },
     config: {
         tournamentName: "My Auction",
+        rules: {},
     },
 };
 
@@ -44,8 +46,7 @@ type Action =
     | { type: 'UNDO_BID' }
     | { type: 'SELL_PLAYER'; payload: { playerId: string; teamId: string; amount: number } }
     | { type: 'PASS_PLAYER'; payload: string } // playerId
-    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string } }
-    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string } }
+    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules } }
     | { type: 'CANCEL_AUCTION_ROUND' }
     | { type: 'RELEASE_PLAYER'; payload: { playerId: string; teamId: string } }
     | { type: 'RESET_AUCTION' };
@@ -289,7 +290,8 @@ function auctionReducer(state: AppState, action: Action): AppState {
                 ...state,
                 config: {
                     ...state.config,
-                    tournamentName: action.payload.tournamentName
+                    tournamentName: action.payload.tournamentName,
+                    rules: action.payload.rules
                 }
             };
 

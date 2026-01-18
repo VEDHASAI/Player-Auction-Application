@@ -31,8 +31,17 @@ export interface AuctionState {
   isAuctionActive: boolean;
 }
 
+export interface SquadRules {
+  maxPlayers?: number;
+  maxBatsmen?: number;
+  maxBowlers?: number;
+  maxAllRounders?: number;
+  maxWicketKeepers?: number;
+}
+
 export interface AppConfig {
   tournamentName: string;
+  rules: SquadRules;
 }
 
 export interface AuctionHistoryItem {

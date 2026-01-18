@@ -48,11 +48,56 @@ export default function AuctionPage() {
     };
 
     const placeBid = (teamId: string, amount: number) => {
+        const team = teams.find(t => t.id === teamId);
+        if (!team || !activePlayer) return;
+
+        const rules = state.config.rules;
+
+        // 1. Max Players
+        if (rules.maxPlayers && team.players.length >= rules.maxPlayers) {
+            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxPlayers} players.`);
+            return;
+        }
+
+        // 2. Role specific limits
+        const role = activePlayer.role;
+        const playersInTeam = team.players.map(pId => players.find(p => p.id === pId)).filter(Boolean) as Player[];
+        const roleCount = playersInTeam.filter(p => p.role === role).length;
+
+        if (role === 'Batsman' && rules.maxBatsmen && roleCount >= rules.maxBatsmen) {
+            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBatsmen} Batsmen.`);
+            return;
+        }
+        if (role === 'Bowler' && rules.maxBowlers && roleCount >= rules.maxBowlers) {
+            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBowlers} Bowlers.`);
+            return;
+        }
+        if (role === 'All-Rounder' && rules.maxAllRounders && roleCount >= rules.maxAllRounders) {
+            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxAllRounders} All-Rounders.`);
+            return;
+        }
+        if (role === 'Wicket Keeper' && rules.maxWicketKeepers && roleCount >= rules.maxWicketKeepers) {
+            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxWicketKeepers} Wicket Keepers.`);
+            return;
+        }
+
         dispatch({ type: 'PLACE_BID', payload: { teamId, amount } });
     };
 
     const sellPlayer = () => {
         if (!activePlayer || !auction.lastBidderTeamId) return;
+
+        const team = teams.find(t => t.id === auction.lastBidderTeamId);
+        const rules = state.config.rules;
+        if (team && rules) {
+            // Re-validate rules before selling (as a safety measure)
+            if (rules.maxPlayers && team.players.length >= rules.maxPlayers) {
+                alert(`Cannot Sell: Team ${team.name} has reached the maximum player limit.`);
+                return;
+            }
+            // (Role checks could be added here too, but placeBid should have caught them)
+        }
+
         dispatch({
             type: 'SELL_PLAYER',
             payload: {
