@@ -26,7 +26,7 @@ export function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Trophy className="w-6 h-6 text-yellow-500" />
-                    <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 text-transparent bg-clip-text">
+                    <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 text-transparent bg-clip-text py-1">
                         AUCTION<span className="text-white">HERE</span>
                     </span>
                 </div>
