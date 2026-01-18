@@ -52,33 +52,73 @@ export default function AuctionPage() {
         if (!team || !activePlayer) return;
 
         const rules = state.config.rules;
+        const playersInTeam = team.players.map(pId => players.find(p => p.id === pId)).filter(Boolean) as Player[];
 
-        // 1. Max Players
+        // 1. Max Players Check
         if (rules.maxPlayers && team.players.length >= rules.maxPlayers) {
             alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxPlayers} players.`);
             return;
         }
 
-        // 2. Role specific limits
+        // 2. Role Specific Max Check
         const role = activePlayer.role;
-        const playersInTeam = team.players.map(pId => players.find(p => p.id === pId)).filter(Boolean) as Player[];
-        const roleCount = playersInTeam.filter(p => p.role === role).length;
+        const roleCounts = {
+            'Batsman': playersInTeam.filter(p => p.role === 'Batsman').length,
+            'Bowler': playersInTeam.filter(p => p.role === 'Bowler').length,
+            'All-Rounder': playersInTeam.filter(p => p.role === 'All-Rounder').length,
+            'Wicket Keeper': playersInTeam.filter(p => p.role === 'Wicket Keeper').length,
+        };
 
-        if (role === 'Batsman' && rules.maxBatsmen && roleCount >= rules.maxBatsmen) {
+        if (role === 'Batsman' && rules.maxBatsmen && roleCounts['Batsman'] >= rules.maxBatsmen) {
             alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBatsmen} Batsmen.`);
             return;
         }
-        if (role === 'Bowler' && rules.maxBowlers && roleCount >= rules.maxBowlers) {
+        if (role === 'Bowler' && rules.maxBowlers && roleCounts['Bowler'] >= rules.maxBowlers) {
             alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBowlers} Bowlers.`);
             return;
         }
-        if (role === 'All-Rounder' && rules.maxAllRounders && roleCount >= rules.maxAllRounders) {
+        if (role === 'All-Rounder' && rules.maxAllRounders && roleCounts['All-Rounder'] >= rules.maxAllRounders) {
             alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxAllRounders} All-Rounders.`);
             return;
         }
-        if (role === 'Wicket Keeper' && rules.maxWicketKeepers && roleCount >= rules.maxWicketKeepers) {
+        if (role === 'Wicket Keeper' && rules.maxWicketKeepers && roleCounts['Wicket Keeper'] >= rules.maxWicketKeepers) {
             alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxWicketKeepers} Wicket Keepers.`);
             return;
+        }
+
+        // 3. Minimum Requirements "Impossible" Check
+        // If there's a Max Players limit, we must ensure enough slots remain for other mandatory role minimums
+        if (rules.maxPlayers) {
+            const slotsAfterThis = rules.maxPlayers - (team.players.length + 1);
+
+            // Calculate how many MORE of each OTHER role is mandatory
+            let mandatoryOtherRoles = 0;
+
+            // Check Batsmen min (if not the current player being bid on)
+            if (rules.minBatsmen) {
+                const current = role === 'Batsman' ? roleCounts['Batsman'] + 1 : roleCounts['Batsman'];
+                mandatoryOtherRoles += Math.max(0, rules.minBatsmen - current);
+            }
+            // Check Bowlers min
+            if (rules.minBowlers) {
+                const current = role === 'Bowler' ? roleCounts['Bowler'] + 1 : roleCounts['Bowler'];
+                mandatoryOtherRoles += Math.max(0, rules.minBowlers - current);
+            }
+            // Check All-Rounders min
+            if (rules.minAllRounders) {
+                const current = role === 'All-Rounder' ? roleCounts['All-Rounder'] + 1 : roleCounts['All-Rounder'];
+                mandatoryOtherRoles += Math.max(0, rules.minAllRounders - current);
+            }
+            // Check Wicket Keepers min
+            if (rules.minWicketKeepers) {
+                const current = role === 'Wicket Keeper' ? roleCounts['Wicket Keeper'] + 1 : roleCounts['Wicket Keeper'];
+                mandatoryOtherRoles += Math.max(0, rules.minWicketKeepers - current);
+            }
+
+            if (mandatoryOtherRoles > slotsAfterThis) {
+                alert(`Rule Violation: Buying this ${role} leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherRoles} more players of other roles to meet the minimum requirements.`);
+                return;
+            }
         }
 
         dispatch({ type: 'PLACE_BID', payload: { teamId, amount } });

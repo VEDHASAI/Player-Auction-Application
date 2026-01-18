@@ -21,7 +21,8 @@ export default function SetupPage() {
 
     // Team Form State
     const [teamName, setTeamName] = useState('');
-    const [teamBudget, setTeamBudget] = useState(DEFAULT_BUDGET.toString());
+    const defaultBudget = state.config.rules.totalBudget || DEFAULT_BUDGET;
+    const [teamBudget, setTeamBudget] = useState(defaultBudget.toString());
 
     // Player Form State
     const [playerName, setPlayerName] = useState('');
@@ -54,7 +55,7 @@ export default function SetupPage() {
         }
 
         setTeamName('');
-        setTeamBudget(DEFAULT_BUDGET.toString());
+        setTeamBudget(defaultBudget.toString());
     };
 
     const handleEditTeam = (team: Team) => {

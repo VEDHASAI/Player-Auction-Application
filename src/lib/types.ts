@@ -32,11 +32,17 @@ export interface AuctionState {
 }
 
 export interface SquadRules {
+  minPlayers?: number;
   maxPlayers?: number;
+  minBatsmen?: number;
   maxBatsmen?: number;
+  minBowlers?: number;
   maxBowlers?: number;
+  minAllRounders?: number;
   maxAllRounders?: number;
+  minWicketKeepers?: number;
   maxWicketKeepers?: number;
+  totalBudget?: number;
 }
 
 export interface AppConfig {
