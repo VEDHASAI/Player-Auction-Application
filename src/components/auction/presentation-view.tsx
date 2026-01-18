@@ -49,17 +49,19 @@ export function PresentationView() {
                                         <div className="w-40 h-40 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-6xl font-black shadow-[0_0_40px_rgba(37,99,235,0.3)] border-4 border-white/10">
                                             {currentPlayer.name.charAt(0)}
                                         </div>
-                                        <div className="absolute -bottom-2 -right-2 bg-slate-900 border border-white/20 px-3 py-1 rounded-lg text-xs font-bold text-blue-400 uppercase tracking-widest shadow-xl">
-                                            {currentPlayer.role.split('-')[0]}
-                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <h2 className="text-5xl font-black tracking-tighter text-white uppercase leading-none">
-                                            {currentPlayer.name}
-                                        </h2>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="text-slate-400 uppercase text-xs font-bold tracking-widest">Base Price</div>
-                                            <div className="text-3xl font-bold text-emerald-400">₹{currentPlayer.basePrice.toLocaleString()}</div>
+                                    <div className="space-y-3">
+                                        <div className="space-y-1">
+                                            <h2 className="text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                                                {currentPlayer.name}
+                                            </h2>
+                                            <div className="inline-block bg-blue-500/20 border border-blue-500/30 px-3 py-0.5 rounded text-[11px] font-black text-blue-400 uppercase tracking-[0.2em]">
+                                                {currentPlayer.role}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-0">
+                                            <div className="text-slate-500 uppercase text-[10px] font-black tracking-widest">Base Price</div>
+                                            <div className="text-3xl font-bold text-emerald-400 font-mono">₹{currentPlayer.basePrice.toLocaleString()}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -137,8 +139,8 @@ export function PresentationView() {
                                     layout
                                     key={team.id}
                                     className={`relative group rounded-2xl border transition-all duration-300 ${lastBidderTeamId === team.id
-                                            ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.2)]'
-                                            : 'bg-slate-900/40 border-white/5'
+                                        ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.2)]'
+                                        : 'bg-slate-900/40 border-white/5'
                                         }`}
                                 >
                                     <div className="p-4 flex flex-col h-full gap-3">
