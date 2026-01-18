@@ -311,22 +311,43 @@ const AuctionContext = createContext<{
 // Provider
 export function AuctionProvider({ children }: { children: React.ReactNode }) {
     const [state, dispatch] = useReducer(auctionReducer, initialState);
+    const lastSavedStateRef = React.useRef<string>('');
 
     // Load from local storage on mount
     useEffect(() => {
         const saved = localStorage.getItem('auction_state');
         if (saved) {
             try {
+                lastSavedStateRef.current = saved;
                 dispatch({ type: 'LOAD_STATE', payload: JSON.parse(saved) });
             } catch (e) {
                 console.error("Failed to load state", e);
             }
         }
+
+        // Listen for storage events to sync across tabs
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'auction_state' && e.newValue && e.newValue !== lastSavedStateRef.current) {
+                try {
+                    lastSavedStateRef.current = e.newValue;
+                    dispatch({ type: 'LOAD_STATE', payload: JSON.parse(e.newValue) });
+                } catch (error) {
+                    console.error("Failed to sync state from storage", error);
+                }
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
     // Save to local storage on change
     useEffect(() => {
-        localStorage.setItem('auction_state', JSON.stringify(state));
+        const stateString = JSON.stringify(state);
+        if (stateString !== lastSavedStateRef.current) {
+            lastSavedStateRef.current = stateString;
+            localStorage.setItem('auction_state', stateString);
+        }
     }, [state]);
 
     return (

@@ -4,7 +4,7 @@ import { AuctionProvider } from "@/lib/store";
 import { Header } from "@/components/ui/header";
 
 export const metadata: Metadata = {
-  title: "IPL Auction War",
+  title: "My Auction",
   description: "Advanced Player Auction System",
 };
 
