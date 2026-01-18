@@ -157,20 +157,20 @@ export default function AuctionPage() {
     return (
         <div className="flex flex-col min-h-[calc(100vh-64px)] relative">
             {/* 1. Main Arena Area */}
-            <div className="flex-1 p-4 md:p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full pb-24">
+            <div className="flex-1 p-2 md:p-4 flex flex-col gap-4 max-w-7xl mx-auto w-full pb-4">
 
                 {/* Back Button */}
                 <Button
                     variant="ghost"
-                    className="self-start text-slate-400 hover:text-white pl-0 hover:bg-transparent"
+                    className="self-start text-slate-400 hover:text-white pl-0 h-8 hover:bg-transparent"
                     onClick={() => setShowExitConfirm(true)}
                 >
-                    <ChevronLeft className="w-5 h-5 mr-1" />
+                    <ChevronLeft className="w-4 h-4 mr-1" />
                     Back to Waiting Room
                 </Button>
 
                 {/* Top: Spotlight & Actions */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                     {/* Spotlight takes 2 cols */}
                     <div className="xl:col-span-2">
                         <PlayerSpotlight player={activePlayer!} currentBid={auction.currentBid} />
@@ -178,53 +178,53 @@ export default function AuctionPage() {
 
                     {/* Action Panel */}
                     <div className="flex flex-col gap-4 justify-center">
-                        <div className="glass-panel p-4 rounded-2xl space-y-4">
-                            <h3 className="text-slate-400 font-medium uppercase text-sm tracking-wider">Auction Controls</h3>
+                        <div className="glass-panel p-4 rounded-2xl space-y-3">
+                            <h3 className="text-slate-400 font-medium uppercase text-xs tracking-wider">Auction Controls</h3>
 
                             {auction.lastBidderTeamId ? (
-                                <div className="space-y-4">
-                                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
-                                        <Gavel className="w-5 h-5 text-green-400" />
+                                <div className="space-y-3">
+                                    <div className="p-2 bg-green-500/10 border border-green-500/30 rounded-lg flex items-center gap-3">
+                                        <Gavel className="w-4 h-4 text-green-400" />
                                         <div>
-                                            <div className="text-xs text-green-400 uppercase font-bold">Winning Team</div>
-                                            <div className="font-bold text-white">
+                                            <div className="text-[10px] text-green-400 uppercase font-bold leading-none mb-1">Winning Team</div>
+                                            <div className="font-bold text-white text-sm">
                                                 {teams.find(t => t.id === auction.lastBidderTeamId)?.name}
                                             </div>
                                         </div>
                                     </div>
                                     <Button
                                         size="lg"
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-lg h-16 shadow-lg shadow-green-500/20"
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-base h-12 shadow-lg shadow-green-500/20"
                                         onClick={sellPlayer}
                                     >
-                                        <CheckCircle2 className="w-6 h-6 mr-2" />
-                                        SOLD @ ₹{(auction.currentBid / 100000).toFixed(2)}L
+                                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                                        SOLD @ ₹{(auction.currentBid / 100000).toFixed(1)}L
                                     </Button>
                                 </div>
                             ) : (
-                                <div className="p-4 bg-slate-800 rounded-lg text-center text-slate-400 italic">
+                                <div className="p-3 bg-slate-800 rounded-lg text-center text-slate-400 italic text-sm">
                                     Waiting for first bid...
                                 </div>
                             )}
 
-                            <div className="pt-4 border-t border-slate-700 space-y-3">
+                            <div className="pt-3 border-t border-slate-700 space-y-2">
                                 {auction.bidHistory.length > 0 && (
                                     <Button
                                         variant="outline"
-                                        className="w-full border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-white"
+                                        className="w-full border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-white h-9 text-sm"
                                         onClick={() => dispatch({ type: 'UNDO_BID' })}
                                     >
-                                        <RotateCcw className="w-4 h-4 mr-2" />
+                                        <RotateCcw className="w-3 h-3 mr-2" />
                                         Undo Last Bid
                                     </Button>
                                 )}
 
                                 <Button
                                     variant="destructive"
-                                    className="w-full bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/50"
+                                    className="w-full bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 border border-transparent hover:border-red-500/50 h-9 text-sm"
                                     onClick={passPlayer}
                                 >
-                                    <XCircle className="w-4 h-4 mr-2" />
+                                    <XCircle className="w-3 h-3 mr-2" />
                                     Pass (Unsold)
                                 </Button>
                             </div>
