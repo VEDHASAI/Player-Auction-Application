@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-8">
       <div className="text-center mb-16 space-y-4">
-        <h1 className="text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text glow-text uppercase">
+        <h1 className="text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text glow-text uppercase py-4">
           {state.config.tournamentName}
         </h1>
         <p className="text-slate-400 text-xl max-w-2xl mx-auto">

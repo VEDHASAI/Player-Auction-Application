@@ -58,7 +58,7 @@ export default function SettingsPage() {
                         {/* Live Preview */}
                         <div className="p-6 bg-slate-900/50 rounded-xl border border-slate-800 flex flex-col items-center gap-4">
                             <span className="text-xs uppercase text-slate-500 tracking-wider">Preview</span>
-                            <h1 className="text-4xl md:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text glow-text text-center">
+                            <h1 className="text-4xl md:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text glow-text text-center py-4">
                                 {name || "TOURNAMENT NAME"}
                             </h1>
                         </div>
