@@ -52,13 +52,17 @@ export function Header() {
                         );
                     })}
                     <div className="w-px h-6 bg-white/10 mx-2" />
-                    <button
-                        onClick={() => window.open('/presentation', 'Presentation', 'width=1920,height=1080')}
+                    <Link
+                        href="/presentation"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            window.open(e.currentTarget.href, 'Presentation', 'width=1920,height=1080');
+                        }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25"
                     >
                         <Users className="w-4 h-4" />
                         <span className="hidden sm:inline">Spectator View</span>
-                    </button>
+                    </Link>
                 </nav>
             </div>
         </header>
