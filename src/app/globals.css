@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  /* User Palette */
+  --background: #0B1020;
+  /* App Background */
+  --foreground: #E5E7EB;
+  /* Primary Text */
+
+  --card: #111827;
+  /* Card Background */
+  --card-hover: #1E293B;
+  /* Card Hover */
+  --card-foreground: #E5E7EB;
+
+  --primary: #3B82F6;
+  /* Primary Action */
+  --primary-foreground: #ffffff;
+
+  --secondary: #0F172A;
+  /* Section Background (repurposing secondary for section bg) */
+  --secondary-foreground: #9CA3AF;
+  /* Secondary Text */
+
+  --highlight: #8B5CF6;
+  /* Auction Highlight (Purple) */
+  --success: #22C55E;
+  /* Success (Green) */
+  --danger: #EF4444;
+  /* Danger (Red) */
+  --warning: #FACC15;
+  /* Accent/Trophy (Yellow) */
+
+  --border: #1E293B;
+  /* Darker border to match card-hover */
+}
+
+/* @theme {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+} */
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .glass-panel {
+    background-color: rgba(17, 24, 39, 0.7);
+    /* #111827 with opacity */
+    @apply backdrop-blur-md border border-slate-700/30 shadow-xl;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+
+  .glow-success {
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  }
+}
