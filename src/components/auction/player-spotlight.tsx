@@ -1,5 +1,7 @@
 import { Player } from "@/lib/types";
 import { User, Shield, Tent, Target } from "lucide-react";
+import { useAuction } from "@/lib/store";
+import { formatCurrency } from "@/lib/format";
 
 interface PlayerSpotlightProps {
     player: Player;
@@ -7,6 +9,9 @@ interface PlayerSpotlightProps {
 }
 
 export function PlayerSpotlight({ player, currentBid }: PlayerSpotlightProps) {
+    const { state } = useAuction();
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
+
     const RoleIcon = () => {
         switch (player.role) {
             case 'Batsman': return <Target className="w-6 h-6 text-red-400" />;
@@ -39,12 +44,12 @@ export function PlayerSpotlight({ player, currentBid }: PlayerSpotlightProps) {
                 <div className="grid grid-cols-2 gap-4 pt-1">
                     <div>
                         <div className="text-slate-500 text-[10px] font-medium uppercase tracking-widest">Base Price</div>
-                        <div className="text-xl text-slate-300 font-mono">₹{(player.basePrice / 100000).toFixed(1)}L</div>
+                        <div className="text-xl text-slate-300 font-mono">{formatCurrency(player.basePrice, currencyUnit)}</div>
                     </div>
                     <div>
                         <div className="text-blue-400 text-[10px] font-medium uppercase tracking-widest">Current Bid</div>
                         <div className="text-3xl md:text-4xl text-white font-mono font-bold leading-none">
-                            ₹{(currentBid / 100000).toFixed(1)}L
+                            {formatCurrency(currentBid, currencyUnit)}
                         </div>
                     </div>
                 </div>

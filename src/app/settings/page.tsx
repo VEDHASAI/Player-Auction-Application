@@ -5,7 +5,7 @@ import { useAuction } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Save, Trash2, User, Coins, Download } from 'lucide-react';
+import { Save, Trash2, User, Coins, Download, Pencil, Gavel } from 'lucide-react';
 import Link from 'next/link';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import Papa from 'papaparse';
@@ -14,13 +14,18 @@ export default function SettingsPage() {
     const { state, dispatch } = useAuction();
     const [name, setName] = useState(state.config.tournamentName);
     const [rules, setRules] = useState(state.config.rules || {});
+    const [currencyUnit, setCurrencyUnit] = useState(state.config.currencyUnit || 'Lakhs');
+    const [playerCategories, setPlayerCategories] = useState(state.config.playerCategories || []);
+    const [bidIncrements, setBidIncrements] = useState(state.config.bidIncrements || [500000, 1000000, 2000000, 5000000, 10000000]);
+    const [categoryLabel, setCategoryLabel] = useState(state.config.categoryLabel || 'Category');
+    const [newCategory, setNewCategory] = useState('');
     const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
         dispatch({
             type: 'UPDATE_SETTINGS',
-            payload: { tournamentName: name, rules }
+            payload: { tournamentName: name, rules, currencyUnit, playerCategories, categoryLabel, bidIncrements }
         });
         alert('Settings Saved!');
     };
@@ -28,6 +33,15 @@ export default function SettingsPage() {
     const updateRule = (key: keyof typeof rules, value: string) => {
         const num = value === '' ? undefined : parseInt(value);
         setRules(prev => ({ ...prev, [key]: num }));
+    };
+
+    const updateCategoryRule = (cat: string, type: 'min' | 'max', value: string) => {
+        const num = value === '' ? undefined : parseInt(value);
+        setRules(prev => {
+            const categoryRules = { ...(prev.categoryRules || {}) };
+            categoryRules[cat] = { ...(categoryRules[cat] || {}), [type]: num };
+            return { ...prev, categoryRules };
+        });
     };
 
     const handleReset = () => {
@@ -102,6 +116,147 @@ export default function SettingsPage() {
                             <p className="text-xs text-slate-500 italic block mb-4">Leave empty if there are no restrictions. These rules are enforced during bidding.</p>
 
                             <div className="space-y-6">
+                                {/* Currency Unit Selection */}
+                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                    <h4 className="text-sm font-bold text-green-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Coins className="w-4 h-4" /> Amount Display Unit
+                                    </h4>
+                                    <div className="flex gap-4">
+                                        {['Lakhs', 'Crores', 'Thousands'].map((unit) => (
+                                            <label key={unit} className="flex items-center gap-2 cursor-pointer group">
+                                                <input
+                                                    type="radio"
+                                                    name="currencyUnit"
+                                                    value={unit}
+                                                    checked={currencyUnit === unit}
+                                                    onChange={(e) => setCurrencyUnit(e.target.value as any)}
+                                                    className="w-4 h-4 border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                                                />
+                                                <span className={`text-sm font-medium ${currencyUnit === unit ? 'text-white' : 'text-slate-500 group-hover:text-slate-400'}`}>
+                                                    {unit}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 italic">Select how amounts should be shown throughout the application.</p>
+                                </div>
+
+                                {/* Category Label Configuration */}
+                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                    <h4 className="text-sm font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Pencil className="w-4 h-4" /> Player Category Label
+                                    </h4>
+                                    <Input
+                                        value={categoryLabel}
+                                        onChange={(e) => setCategoryLabel(e.target.value)}
+                                        placeholder="e.g. Category"
+                                        className="bg-slate-900/50 border-slate-700 text-white h-9"
+                                    />
+                                    <p className="text-[10px] text-slate-500 italic">Customize what this extra player field is called (e.g., "Tier").</p>
+                                </div>
+
+                                {/* Bid Increments Configuration */}
+                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                    <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Gavel className="w-4 h-4" /> Bid Increments (₹)
+                                    </h4>
+                                    <div className="grid grid-cols-5 gap-2">
+                                        {bidIncrements.map((val, idx) => (
+                                            <div key={idx} className="space-y-1">
+                                                <label className="text-[9px] text-slate-500 font-black uppercase">Slot {idx + 1}</label>
+                                                <Input
+                                                    type="number"
+                                                    value={val}
+                                                    onChange={(e) => {
+                                                        const newIncrements = [...bidIncrements];
+                                                        newIncrements[idx] = parseInt(e.target.value) || 0;
+                                                        setBidIncrements(newIncrements);
+                                                    }}
+                                                    className="bg-slate-900/50 border-slate-700 text-white h-9 px-2 text-xs font-mono"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 italic">Configure the 5 quick-bid increment buttons available in the auction room.</p>
+                                </div>
+
+                                {/* Player Categories Management */}
+                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                    <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                        <User className="w-4 h-4" /> Player Categories
+                                    </h4>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={newCategory}
+                                            onChange={(e) => setNewCategory(e.target.value)}
+                                            placeholder="e.g. Marquee"
+                                            className="bg-slate-900/50 border-slate-700 text-white h-9"
+                                        />
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                if (newCategory && !playerCategories.includes(newCategory)) {
+                                                    setPlayerCategories([...playerCategories, newCategory]);
+                                                    setNewCategory('');
+                                                }
+                                            }}
+                                            className="h-9 px-4"
+                                            variant="outline"
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                        {playerCategories.map((cat) => (
+                                            <div key={cat} className="flex flex-col gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 group w-full md:w-[calc(50%-0.5rem)]">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-blue-400 text-xs font-bold">{cat}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPlayerCategories(playerCategories.filter(c => c !== cat));
+                                                            setRules(prev => {
+                                                                const categoryRules = { ...(prev.categoryRules || {}) };
+                                                                delete categoryRules[cat];
+                                                                return { ...prev, categoryRules };
+                                                            });
+                                                        }}
+                                                        className="hover:text-red-400 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] text-slate-500 uppercase font-black">Min</label>
+                                                        <Input
+                                                            type="number"
+                                                            value={rules.categoryRules?.[cat]?.min ?? ''}
+                                                            onChange={(e) => updateCategoryRule(cat, 'min', e.target.value)}
+                                                            className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
+                                                            placeholder="No min"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] text-slate-500 uppercase font-black">Max</label>
+                                                        <Input
+                                                            type="number"
+                                                            value={rules.categoryRules?.[cat]?.max ?? ''}
+                                                            onChange={(e) => updateCategoryRule(cat, 'max', e.target.value)}
+                                                            className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
+                                                            placeholder="No max"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {playerCategories.length === 0 && (
+                                            <p className="text-[10px] text-slate-500 italic">No categories defined. All players will be uncategorized.</p>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 italic pt-1">Define categories like Marquee, Elite, Uncapped, etc. These will be available for tagging players.</p>
+                                </div>
+
                                 {/* Total Budget */}
                                 <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
                                     <h4 className="text-sm font-bold text-yellow-400 uppercase tracking-widest flex items-center gap-2">

@@ -11,13 +11,16 @@ import { Card } from "@/components/ui/card";
 import { Gavel, XCircle, CheckCircle2, User, RotateCcw, Search, ChevronLeft } from "lucide-react";
 import { Player, ROLES } from "@/lib/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { formatCurrency } from "@/lib/format";
 
 export default function AuctionPage() {
     const { state, dispatch } = useAuction();
     const { auction, players, teams } = state;
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
 
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState("All");
+    const [categoryFilter, setCategoryFilter] = useState("All");
     const [showExitConfirm, setShowExitConfirm] = useState(false);
 
     const activePlayer = players.find(p => p.id === auction.currentPlayerId);
@@ -30,8 +33,9 @@ export default function AuctionPage() {
 
             const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesRole = roleFilter === "All" || p.role === roleFilter;
+            const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
 
-            return matchesSearch && matchesRole;
+            return matchesSearch && matchesRole && matchesCategory;
         })
         .sort((a, b) => {
             // Sort by Status: Available first, then Unsold
@@ -121,6 +125,35 @@ export default function AuctionPage() {
             }
         }
 
+        // 4. Category Specific Max Check
+        const categoryLabel = state.config.categoryLabel || 'Category';
+        if (activePlayer.category && rules.categoryRules?.[activePlayer.category]?.max) {
+            const currentCatCount = playersInTeam.filter(p => p.category === activePlayer.category).length;
+            if (currentCatCount >= rules.categoryRules[activePlayer.category].max!) {
+                alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.categoryRules[activePlayer.category].max} ${activePlayer.category} players.`);
+                return;
+            }
+        }
+
+        // 5. Category Minimum Requirements "Impossible" Check
+        if (rules.maxPlayers && rules.categoryRules) {
+            const slotsAfterThis = rules.maxPlayers - (team.players.length + 1);
+            let mandatoryOtherCategories = 0;
+
+            Object.entries(rules.categoryRules).forEach(([cat, catRule]) => {
+                if (catRule.min) {
+                    const currentCatCount = playersInTeam.filter(p => p.category === cat).length;
+                    const nextCatCount = activePlayer.category === cat ? currentCatCount + 1 : currentCatCount;
+                    mandatoryOtherCategories += Math.max(0, catRule.min - nextCatCount);
+                }
+            });
+
+            if (mandatoryOtherCategories > slotsAfterThis) {
+                alert(`Rule Violation: Buying this player leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherCategories} more players of other ${categoryLabel.toLowerCase()}s to meet the minimum requirements.`);
+                return;
+            }
+        }
+
         dispatch({ type: 'PLACE_BID', payload: { teamId, amount } });
     };
 
@@ -195,6 +228,16 @@ export default function AuctionPage() {
                             <option key={role} value={role}>{role}</option>
                         ))}
                     </select>
+                    <select
+                        className="h-10 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-sm text-slate-200 focus:outline-none focus:border-blue-500 w-full md:w-48"
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                    >
+                        <option value="All">All {state.config.categoryLabel || 'Categories'}</option>
+                        {Array.from(new Set(players.filter(p => p.category).map(p => p.category))).map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -212,8 +255,13 @@ export default function AuctionPage() {
                             className="p-4 flex flex-col items-center text-center gap-4 hover:border-blue-500 hover:bg-[#1E293B] transition-all cursor-pointer group"
                             onClick={() => startAuction(player.id)}
                         >
-                            <div className="w-20 h-20 rounded-full bg-[#0F172A] flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                            <div className="w-20 h-20 rounded-full bg-[#0F172A] flex items-center justify-center group-hover:bg-blue-500/20 transition-colors relative">
                                 <User className="w-10 h-10 text-slate-400 group-hover:text-blue-400" />
+                                {player.category && (
+                                    <div className="absolute -top-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#111827]">
+                                        {player.category.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <h3 className="font-bold text-lg text-white">{player.name}</h3>
@@ -224,7 +272,7 @@ export default function AuctionPage() {
                                     </span>
                                 )}
                                 <p className="text-xs font-mono mt-1 bg-slate-900 px-2 py-1 rounded inline-block text-slate-300">
-                                    Base: ₹{(player.basePrice / 100000).toFixed(0)}L
+                                    Base: {formatCurrency(player.basePrice, currencyUnit)}
                                 </p>
                             </div>
                             <Button className="w-full mt-auto bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-600/50">
@@ -283,7 +331,7 @@ export default function AuctionPage() {
                                         onClick={sellPlayer}
                                     >
                                         <CheckCircle2 className="w-5 h-5 mr-2" />
-                                        SOLD @ ₹{(auction.currentBid / 100000).toFixed(1)}L
+                                        SOLD @ {formatCurrency(auction.currentBid, currencyUnit)}
                                     </Button>
                                 </div>
                             ) : (

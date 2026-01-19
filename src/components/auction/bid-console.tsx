@@ -2,6 +2,8 @@ import { Team } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Gavel } from "lucide-react";
+import { useAuction } from "@/lib/store";
+import { formatCurrency } from "@/lib/format";
 
 interface BidConsoleProps {
     teams: Team[];
@@ -10,39 +12,40 @@ interface BidConsoleProps {
     lastBidderTeamId: string | null;
 }
 
-const BID_INCREMENTS = [
-    { label: "+ 5L", value: 500000 },
-    { label: "+ 10L", value: 1000000 },
-    { label: "+ 20L", value: 2000000 },
-    { label: "+ 50L", value: 5000000 },
-    { label: "+ 1Cr", value: 10000000 },
-];
 
 export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId }: BidConsoleProps) {
-    const [selectedIncrement, setSelectedIncrement] = useState(200000); // Default 2L (Fixed default to 2L logic or matches array)
-    // Let's match the array default
-    const [increment, setIncrement] = useState(2000000); // 20L default
+    const { state } = useAuction();
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
+    const bidIncrements = state.config.bidIncrements || [500000, 1000000, 2000000, 5000000, 10000000];
+    const [increment, setIncrement] = useState(bidIncrements[2] || 2000000); // Default to middle increment
 
     return (
         <div className="space-y-3">
             {/* Increment Selectors */}
             <div className="flex flex-wrap gap-2 justify-center">
-                {BID_INCREMENTS.map((inc) => (
-                    <button
-                        key={inc.label}
-                        onClick={() => setIncrement(inc.value)}
-                        className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${increment === inc.value
-                            ? "bg-blue-600 text-white shadow-lg scale-105"
-                            : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                            }`}
-                    >
-                        {inc.label}
-                    </button>
-                ))}
+                {bidIncrements.map((val, idx) => {
+                    let label = "";
+                    if (val >= 10000000) label = `+ ${(val / 10000000).toFixed(1)}Cr`;
+                    else if (val >= 100000) label = `+ ${(val / 100000).toFixed(1)}L`;
+                    else label = `+ ${(val / 1000).toFixed(0)}K`;
+
+                    return (
+                        <button
+                            key={idx}
+                            onClick={() => setIncrement(val)}
+                            className={`px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${increment === val
+                                ? "bg-blue-600 text-white shadow-lg scale-105"
+                                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                                }`}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
             </div>
 
             <div className="text-center text-slate-500 text-[10px] font-black uppercase tracking-widest">
-                Next Bid: <span className="text-white font-mono text-sm ml-1">₹{((currentBid + increment) / 100000).toFixed(1)}L</span>
+                Next Bid: <span className="text-white font-mono text-sm ml-1">{formatCurrency(currentBid + increment, currencyUnit)}</span>
             </div>
 
             {/* Team Buttons Grid */}
@@ -68,7 +71,7 @@ export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId }: 
                             <span className="font-black text-xs uppercase tracking-tight truncate w-full">{team.name}</span>
                             {canAfford && !isLeading && (
                                 <span className="text-[9px] font-bold opacity-50">
-                                    +{(increment / 100000).toFixed(0)}L
+                                    +{increment >= 10000000 ? (increment / 10000000).toFixed(2) + ' Cr' : increment >= 100000 ? (increment / 100000).toFixed(0) + ' L' : (increment / 1000).toFixed(0) + ' K'}
                                 </span>
                             )}
                             {isLeading && <span className="text-[9px] font-black flex items-center gap-1 uppercase tracking-tighter"><Gavel className="w-2.5 h-2.5" /> Bidder</span>}

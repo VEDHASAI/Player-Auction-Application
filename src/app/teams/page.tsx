@@ -7,10 +7,12 @@ import { Users, Trophy, Download, CheckCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import * as XLSX from 'xlsx';
+import { formatCurrency } from "@/lib/format";
 
 export default function TeamsPage() {
     const { state, dispatch } = useAuction();
     const { teams, players } = state;
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
     const [showExportConfirm, setShowExportConfirm] = useState(false);
 
     // Release Player State
@@ -112,11 +114,11 @@ export default function TeamsPage() {
                                 <div className="grid grid-cols-2 gap-4 text-sm mt-4">
                                     <div>
                                         <div className="text-slate-500">Remaining</div>
-                                        <div className="text-emerald-400 font-mono font-bold">₹{(team.remainingBudget / 10000000).toFixed(2)} Cr</div>
+                                        <div className="text-emerald-400 font-mono font-bold">{formatCurrency(team.remainingBudget, currencyUnit)}</div>
                                     </div>
                                     <div>
                                         <div className="text-slate-500">Spent</div>
-                                        <div className="text-slate-300 font-mono">₹{(spent / 10000000).toFixed(2)} Cr</div>
+                                        <div className="text-slate-300 font-mono">{formatCurrency(spent, currencyUnit)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -149,7 +151,7 @@ export default function TeamsPage() {
                                                         <td className="px-4 py-3 text-right">
                                                             <div className="flex items-center justify-end gap-3">
                                                                 <span className="font-mono text-slate-300">
-                                                                    ₹{((p.soldPrice || 0) / 100000).toFixed(2)}L
+                                                                    {formatCurrency(p.soldPrice || 0, currencyUnit)}
                                                                 </span>
                                                                 <button
                                                                     onClick={() => setPlayerToRelease({ id: p.id, name: p.name, teamId: team.id })}

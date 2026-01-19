@@ -1,6 +1,8 @@
 import { Team } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Users, Wallet } from "lucide-react";
+import { useAuction } from "@/lib/store";
+import { formatCurrency } from "@/lib/format";
 
 interface TeamStripProps {
     teams: Team[];
@@ -9,6 +11,9 @@ interface TeamStripProps {
 }
 
 export function TeamStrip({ teams, lastBidderTeamId, currentBid }: TeamStripProps) {
+    const { state } = useAuction();
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
+
     return (
         <div className="w-full overflow-x-auto pb-2 pt-2 scrollbar-hide px-4 md:px-12">
             <div className="flex gap-3 justify-center min-w-max py-1">
@@ -36,7 +41,7 @@ export function TeamStrip({ teams, lastBidderTeamId, currentBid }: TeamStripProp
                                     <div className="flex items-center justify-between text-[10px] text-slate-500">
                                         <span className="flex items-center gap-1 font-bold uppercase tracking-tighter">Rem.</span>
                                         <span className={`font-mono transition-colors font-bold ${isLeader ? 'text-yellow-400' : 'text-slate-200'}`}>
-                                            ₹{(displayedBudget / 10000000).toFixed(2)} Cr
+                                            {formatCurrency(displayedBudget, currencyUnit)}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-[10px] text-slate-500">

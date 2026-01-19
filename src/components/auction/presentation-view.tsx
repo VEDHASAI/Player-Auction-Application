@@ -3,6 +3,7 @@
 import { useAuction } from '@/lib/store';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency } from '@/lib/format';
 
 export function PresentationView() {
     const { state } = useAuction();
@@ -11,6 +12,7 @@ export function PresentationView() {
 
     const currentPlayer = currentPlayerId ? players.find(p => p.id === currentPlayerId) : null;
     const lastBidder = lastBidderTeamId ? teams.find(t => t.id === lastBidderTeamId) : null;
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
 
     return (
         <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden font-sans flex flex-col gap-4">
@@ -61,7 +63,7 @@ export function PresentationView() {
                                         </div>
                                         <div className="flex flex-col gap-0">
                                             <div className="text-slate-500 uppercase text-[9px] font-black tracking-widest">Base Price</div>
-                                            <div className="text-2xl font-bold text-emerald-400 font-mono">₹{currentPlayer.basePrice.toLocaleString()}</div>
+                                            <div className="text-2xl font-bold text-emerald-400 font-mono">{formatCurrency(currentPlayer.basePrice, currencyUnit)}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -88,7 +90,7 @@ export function PresentationView() {
                                                 animate={{ scale: 1, opacity: 1 }}
                                                 className="text-7xl font-black text-white leading-none tabular-nums tracking-tighter glow-text"
                                             >
-                                                ₹{currentBid.toLocaleString()}
+                                                {formatCurrency(currentBid, currencyUnit)}
                                             </motion.div>
                                         </div>
 
@@ -150,7 +152,7 @@ export function PresentationView() {
                                                 </h4>
                                                 <div className="text-[8px] text-slate-500 font-bold uppercase">Purse</div>
                                                 <div className="text-base font-black text-emerald-400 leading-none">
-                                                    ₹{team.remainingBudget.toLocaleString()}
+                                                    {formatCurrency(team.remainingBudget, currencyUnit)}
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -175,7 +177,7 @@ export function PresentationView() {
                                                                 <div className="text-[7px] text-slate-500 uppercase">{p.role.split('-')[0]}</div>
                                                             </div>
                                                             <div className="col-span-4 text-right text-[9px] font-black text-blue-400">
-                                                                ₹{((p.soldPrice || 0) / 100000).toFixed(1)}L
+                                                                {formatCurrency(p.soldPrice || 0, currencyUnit)}
                                                             </div>
                                                         </div>
                                                     ))

@@ -11,6 +11,7 @@ export interface Player {
   soldPrice?: number;
   soldToTeamId?: string;
   imageUrl?: string;
+  category?: string;
 }
 
 export interface Team {
@@ -42,12 +43,19 @@ export interface SquadRules {
   maxAllRounders?: number;
   minWicketKeepers?: number;
   maxWicketKeepers?: number;
+  categoryRules?: Record<string, { min?: number, max?: number }>;
   totalBudget?: number;
 }
+
+export type CurrencyUnit = 'Lakhs' | 'Crores' | 'Thousands';
 
 export interface AppConfig {
   tournamentName: string;
   rules: SquadRules;
+  currencyUnit: CurrencyUnit;
+  playerCategories?: string[];
+  categoryLabel?: string;
+  bidIncrements?: number[];
 }
 
 export interface AuctionHistoryItem {

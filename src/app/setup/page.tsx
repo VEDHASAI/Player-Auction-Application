@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Users, UserPlus, Upload, Download, Pencil } from 'lucide-react';
+import { formatCurrency } from "@/lib/format";
 import { v4 as uuidv4 } from 'uuid';
 import Papa from 'papaparse';
 import { useRef } from 'react';
 
 export default function SetupPage() {
     const { state, dispatch } = useAuction();
+    const currencyUnit = state.config.currencyUnit || 'Lakhs';
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Editing State
@@ -27,6 +29,7 @@ export default function SetupPage() {
     // Player Form State
     const [playerName, setPlayerName] = useState('');
     const [playerRole, setPlayerRole] = useState<Role>('All-Rounder');
+    const [playerCategory, setPlayerCategory] = useState('');
     const [playerBasePrice, setPlayerBasePrice] = useState('2000000'); // 20 Lakh default
 
     const handleAddTeam = (e: React.FormEvent) => {
@@ -73,11 +76,9 @@ export default function SetupPage() {
                 id: editingPlayerId,
                 name: playerName,
                 role: playerRole,
+                category: playerCategory,
                 basePrice: parseInt(playerBasePrice),
-                status: 'Available', // Resetting status on edit? Maybe keep it. Let's assume editing keeps status available for simplicity as per requirements for now or logic elsewhere handles it. Ideally should fetch existing status.
-                // Better approach: Find existing player to preserve status if needed, but for now assuming Setup is mostly for Available/Unsold players.
-                // Let's safe find
-                // Actually, finding it from state here creates a closure issue if not careful, but state is fresh.
+                status: 'Available',
             };
             // To preserve status, we should check state inside reducer or pass it.
             // Reducer replacement handles it if we pass full object.
@@ -93,6 +94,7 @@ export default function SetupPage() {
                 id: uuidv4(),
                 name: playerName,
                 role: playerRole,
+                category: playerCategory,
                 basePrice: parseInt(playerBasePrice),
                 status: 'Available',
             };
@@ -105,14 +107,15 @@ export default function SetupPage() {
     const handleEditPlayer = (player: Player) => {
         setPlayerName(player.name);
         setPlayerRole(player.role);
+        setPlayerCategory(player.category || '');
         setPlayerBasePrice(player.basePrice.toString());
         setEditingPlayerId(player.id);
     };
 
     const handleDownloadTemplate = () => {
         const csv = Papa.unparse([
-            { Name: 'Virat Kohli', Role: 'Batsman', BasePrice: '2000000' },
-            { Name: 'Jasprit Bumrah', Role: 'Bowler', BasePrice: '2000000' },
+            { Name: 'Virat Kohli', Role: 'Batsman', Category: 'Marquee', BasePrice: '2000000' },
+            { Name: 'Jasprit Bumrah', Role: 'Bowler', Category: 'Marquee', BasePrice: '2000000' },
         ]);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -139,7 +142,8 @@ export default function SetupPage() {
                         const newPlayer: Player = {
                             id: uuidv4(),
                             name: row.Name,
-                            role: row.Role as Role, // Basic assumption, could add validation
+                            role: row.Role as Role,
+                            category: row.Category,
                             basePrice: parseInt(row.BasePrice),
                             status: 'Available',
                         };
@@ -294,6 +298,21 @@ export default function SetupPage() {
                                     </div>
                                 </div>
 
+                                <div>
+                                    <label className="text-sm font-medium text-slate-400 mb-1 block">{state.config.categoryLabel || 'Category'} (Optional)</label>
+                                    <Input
+                                        placeholder={`e.g. Marquee`}
+                                        value={playerCategory}
+                                        onChange={(e) => setPlayerCategory(e.target.value)}
+                                        list="category-suggestions"
+                                    />
+                                    <datalist id="category-suggestions">
+                                        {state.config.playerCategories?.map(cat => (
+                                            <option key={cat} value={cat} />
+                                        ))}
+                                    </datalist>
+                                </div>
+
                                 <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 shadow-purple-500/20">
                                     {editingPlayerId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                                     {editingPlayerId ? "Update Player" : "Add Player"}
@@ -313,7 +332,9 @@ export default function SetupPage() {
                                     <div key={player.id} className="flex items-center justify-between p-3 bg-[#1E293B] rounded-lg border border-slate-700/50">
                                         <div>
                                             <div className="font-semibold text-white">{player.name}</div>
-                                            <div className="text-xs text-slate-400">{player.role} • ₹{(player.basePrice / 100000).toFixed(2)} Lakh</div>
+                                            <div className="text-xs text-slate-400">
+                                                {player.role} • {player.category && <span className="text-blue-400 font-bold">{player.category} • </span>} {formatCurrency(player.basePrice, currencyUnit)}
+                                            </div>
                                         </div>
                                         <div className="flex gap-1">
                                             <Button

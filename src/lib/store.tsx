@@ -11,8 +11,12 @@ interface AppState {
     config: {
         tournamentName: string;
         rules: SquadRules;
+        currencyUnit: 'Lakhs' | 'Crores' | 'Thousands';
+        playerCategories?: string[];
+        categoryLabel?: string;
+        bidIncrements?: number[];
     };
-}
+};
 
 // Initial State
 const initialState: AppState = {
@@ -29,6 +33,10 @@ const initialState: AppState = {
     config: {
         tournamentName: "My Auction",
         rules: {},
+        currencyUnit: 'Lakhs',
+        playerCategories: ['Marquee', 'Elite', 'International', 'Domestic'],
+        categoryLabel: 'Category',
+        bidIncrements: [500000, 1000000, 2000000, 5000000, 10000000],
     },
 };
 
@@ -46,7 +54,7 @@ type Action =
     | { type: 'UNDO_BID' }
     | { type: 'SELL_PLAYER'; payload: { playerId: string; teamId: string; amount: number } }
     | { type: 'PASS_PLAYER'; payload: string } // playerId
-    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules } }
+    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules; currencyUnit: 'Lakhs' | 'Crores' | 'Thousands'; playerCategories?: string[]; categoryLabel?: string; bidIncrements?: number[] } }
     | { type: 'CANCEL_AUCTION_ROUND' }
     | { type: 'RELEASE_PLAYER'; payload: { playerId: string; teamId: string } }
     | { type: 'RESET_AUCTION' };
@@ -291,7 +299,11 @@ function auctionReducer(state: AppState, action: Action): AppState {
                 config: {
                     ...state.config,
                     tournamentName: action.payload.tournamentName,
-                    rules: action.payload.rules
+                    rules: action.payload.rules,
+                    currencyUnit: action.payload.currencyUnit,
+                    playerCategories: action.payload.playerCategories,
+                    categoryLabel: action.payload.categoryLabel,
+                    bidIncrements: action.payload.bidIncrements
                 }
             };
 
