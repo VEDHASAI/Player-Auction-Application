@@ -4,6 +4,8 @@ import { useAuction } from '@/lib/store';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/lib/format';
+import { useEffect, useRef, useState } from 'react';
+import { User, Trophy, XCircle } from 'lucide-react';
 
 export function PresentationView() {
     const { state } = useAuction();
@@ -13,6 +15,53 @@ export function PresentationView() {
     const currentPlayer = currentPlayerId ? players.find(p => p.id === currentPlayerId) : null;
     const lastBidder = lastBidderTeamId ? teams.find(t => t.id === lastBidderTeamId) : null;
     const currencyUnit = state.config.currencyUnit || 'Lakhs';
+
+    const [showResult, setShowResult] = useState<'sold' | 'unsold' | null>(null);
+    const [resultData, setResultData] = useState<{ playerName: string, teamName?: string, price?: number } | null>(null);
+
+    const prevHistoryLen = useRef(auction.history.length);
+    const prevPlayers = useRef(players);
+    const prevCurrentPlayerId = useRef(currentPlayerId);
+
+    useEffect(() => {
+        // Detect SOLD
+        if (auction.history.length > prevHistoryLen.current) {
+            const latestSold = auction.history[0];
+            const player = players.find(p => p.id === latestSold.playerId);
+            const team = teams.find(t => t.id === latestSold.soldToTeamId);
+
+            if (player && team) {
+                setResultData({
+                    playerName: player.name,
+                    teamName: team.name,
+                    price: latestSold.soldPrice
+                });
+                setShowResult('sold');
+                setTimeout(() => setShowResult(null), 5000);
+            }
+        }
+
+        // Detect UNSOLD
+        const wasActive = prevCurrentPlayerId.current !== null;
+        const isInactive = currentPlayerId === null;
+
+        if (wasActive && isInactive && auction.history.length === prevHistoryLen.current) {
+            // Player was active, now no player active, and history didn't grow -> Must be Unsold or Cancelled
+            // Check if the previously active player is now 'Unsold'
+            const lastPlayer = prevPlayers.current.find(p => p.id === prevCurrentPlayerId.current);
+            const currentPlayerStatus = players.find(p => p.id === prevCurrentPlayerId.current)?.status;
+
+            if (lastPlayer && currentPlayerStatus === 'Unsold') {
+                setResultData({ playerName: lastPlayer.name });
+                setShowResult('unsold');
+                setTimeout(() => setShowResult(null), 4000);
+            }
+        }
+
+        prevHistoryLen.current = auction.history.length;
+        prevPlayers.current = players;
+        prevCurrentPlayerId.current = currentPlayerId;
+    }, [auction.history, players, currentPlayerId, teams]);
 
     return (
         <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden font-sans flex flex-col gap-4">
@@ -190,6 +239,78 @@ export function PresentationView() {
                         })}
                 </div>
             </section>
+
+            {/* CELEBRATION OVERLAY */}
+            <AnimatePresence>
+                {showResult && resultData && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md"
+                    >
+                        {showResult === 'sold' ? (
+                            <motion.div
+                                initial={{ scale: 0.5, y: 50 }}
+                                animate={{ scale: 1, y: 0 }}
+                                exit={{ scale: 1.5, opacity: 0 }}
+                                className="relative flex flex-col items-center text-center p-12 rounded-[3rem] border-4 border-yellow-500/30 bg-gradient-to-b from-yellow-500/20 to-transparent shadow-[0_0_100px_rgba(234,179,8,0.2)]"
+                            >
+                                {/* Decorative Particles */}
+                                {[...Array(12)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ x: 0, y: 0, opacity: 0 }}
+                                        animate={{
+                                            x: (Math.random() - 0.5) * 600,
+                                            y: (Math.random() - 0.5) * 600,
+                                            opacity: [0, 1, 0],
+                                            scale: [0, 1, 0.5]
+                                        }}
+                                        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.1 }}
+                                        className="absolute w-2 h-2 rounded-full bg-yellow-400"
+                                    />
+                                ))}
+
+                                <div className="w-24 h-24 bg-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(234,179,8,0.5)]">
+                                    <Trophy className="w-12 h-12 text-slate-900" />
+                                </div>
+                                <h2 className="text-2xl font-black text-yellow-500 uppercase tracking-[0.3em] mb-2">Sold</h2>
+                                <h1 className="text-7xl font-black text-white uppercase tracking-tighter mb-6 leading-none">
+                                    {resultData.playerName}
+                                </h1>
+                                <div className="space-y-1">
+                                    <div className="text-slate-400 uppercase text-xs font-bold tracking-[0.2em]">Acquired by</div>
+                                    <div className="px-8 py-3 bg-blue-600 rounded-2xl text-4xl font-black text-white shadow-2xl border-2 border-white/10">
+                                        {resultData.teamName}
+                                    </div>
+                                    <div className="text-4xl font-bold text-emerald-400 font-mono mt-4">
+                                        {formatCurrency(resultData.price || 0, currencyUnit)}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                className="flex flex-col items-center text-center p-12 rounded-[3rem] border-4 border-red-500/30 bg-gradient-to-b from-red-500/10 to-transparent"
+                            >
+                                <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6 border-2 border-slate-700">
+                                    <XCircle className="w-10 h-10 text-red-500" />
+                                </div>
+                                <h2 className="text-xl font-black text-red-500 uppercase tracking-[0.3em] mb-2">Notice</h2>
+                                <h1 className="text-6xl font-black text-slate-400 uppercase tracking-tighter mb-4 grayscale">
+                                    {resultData.playerName}
+                                </h1>
+                                <div className="px-6 py-2 bg-slate-900/50 border border-slate-700 rounded-xl text-3xl font-black text-slate-500 uppercase tracking-widest rotate-[-2deg]">
+                                    Unsold
+                                </div>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 3px; }
