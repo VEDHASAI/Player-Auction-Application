@@ -12,6 +12,8 @@ interface ConfirmDialogProps {
     variant?: 'danger' | 'warning' | 'info';
     onConfirm: () => void;
     onCancel: () => void;
+    extraActionText?: string;
+    onExtraAction?: () => void;
 }
 
 export function ConfirmDialog({
@@ -22,7 +24,9 @@ export function ConfirmDialog({
     cancelText = "Cancel",
     variant = 'warning',
     onConfirm,
-    onCancel
+    onCancel,
+    extraActionText,
+    onExtraAction
 }: ConfirmDialogProps) {
     if (!isOpen) return null;
 
@@ -63,6 +67,11 @@ export function ConfirmDialog({
                         <Button variant="outline" onClick={onCancel} className="border-slate-600 text-slate-300 hover:bg-slate-800">
                             {cancelText}
                         </Button>
+                        {extraActionText && onExtraAction && (
+                            <Button variant="outline" onClick={onExtraAction} className="border-blue-700 text-blue-400 hover:bg-blue-900/20">
+                                {extraActionText}
+                            </Button>
+                        )}
                         <Button
                             className={variantStyles[variant]}
                             onClick={onConfirm}

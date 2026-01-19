@@ -5,9 +5,10 @@ import { useAuction } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Save, Trash2, User, Coins } from 'lucide-react';
+import { Save, Trash2, User, Coins, Download } from 'lucide-react';
 import Link from 'next/link';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import Papa from 'papaparse';
 
 export default function SettingsPage() {
     const { state, dispatch } = useAuction();
@@ -34,6 +35,37 @@ export default function SettingsPage() {
         setShowResetConfirm(false);
         alert('System Reset Successfully');
     };
+
+    const exportAuctionDataToCSV = () => {
+        if (state.auction.history.length === 0) {
+            return;
+        }
+
+        const exportData = state.auction.history.map(item => {
+            const player = state.players.find(p => p.id === item.playerId);
+            const team = state.teams.find(t => t.id === item.soldToTeamId);
+            return {
+                'Player Name': player?.name || 'Unknown',
+                'Role': player?.role || 'Unknown',
+                'Base Price': player?.basePrice || 0,
+                'Sold Price': item.soldPrice,
+                'Sold To': team?.name || 'Unknown',
+                'Timestamp': new Date(item.timestamp).toLocaleString()
+            };
+        });
+
+        const csv = Papa.unparse(exportData);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `auction_data_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const hasAuctionData = state.auction.history.length > 0;
 
     return (
         <div className="container mx-auto p-6 max-w-4xl space-y-8">
@@ -271,8 +303,13 @@ export default function SettingsPage() {
                 onConfirm={handleReset}
                 onCancel={() => setShowResetConfirm(false)}
                 title="Reset All Data?"
-                description="This action cannot be undone. All teams, players, and bid history will be permanently deleted."
-                confirmText="Yes, Delete Everything"
+                description={hasAuctionData
+                    ? "Careful! There is active auction history. We recommend saving the data before resetting. This will permanently delete all teams, players, and sold data."
+                    : "This action cannot be undone. All teams, players, and bid history will be permanently deleted."
+                }
+                confirmText="Delete All"
+                extraActionText={hasAuctionData ? "Save & Reset" : undefined}
+                onExtraAction={hasAuctionData ? () => { exportAuctionDataToCSV(); handleReset(); } : undefined}
                 variant="danger"
             />
         </div>

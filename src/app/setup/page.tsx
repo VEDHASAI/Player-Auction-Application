@@ -161,11 +161,6 @@ export default function SetupPage() {
         <div className="container mx-auto p-6 space-y-8 max-w-6xl">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-white">Tournament Setup</h1>
-                <Button variant="destructive" onClick={() => {
-                    if (confirm("Are you sure? This will delete all data.")) {
-                        dispatch({ type: 'RESET_AUCTION' });
-                    }
-                }}>Reset All Data</Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
