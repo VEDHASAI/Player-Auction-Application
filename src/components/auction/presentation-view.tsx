@@ -161,10 +161,43 @@ export function PresentationView() {
                                 </div>
                             </motion.div>
                         ) : (
-                            <div className="h-[240px] flex items-center justify-center bg-slate-900/20">
-                                <div className="text-center space-y-2 opacity-30">
-                                    <div className="text-6xl">🏟️</div>
-                                    <h2 className="text-xl font-black uppercase tracking-widest">Waiting for next player</h2>
+                            <div className="h-[240px] w-full flex items-center justify-between px-12 bg-slate-900/20">
+                                {/* RECENT RESULTS (LEFT/CENTER) */}
+                                <div className="flex gap-6 items-center">
+                                    {auction.history.slice(0, 2).map((item, idx) => {
+                                        const p = players.find(player => player.id === item.playerId);
+                                        const t = teams.find(team => team.id === item.soldToTeamId);
+                                        if (!p || !t) return null;
+                                        return (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.2 }}
+                                                key={item.playerId}
+                                                className="bg-slate-950/50 border border-white/5 p-4 rounded-2xl flex flex-col gap-1 min-w-[240px] relative overflow-hidden group"
+                                            >
+                                                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                    <Trophy className="w-12 h-12 text-yellow-500" />
+                                                </div>
+                                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recent Result</div>
+                                                <div className="text-xl font-black text-white uppercase truncate">{p.name}</div>
+                                                <div className="flex items-center justify-between mt-1">
+                                                    <div className="px-2 py-0.5 bg-blue-600 rounded text-[10px] font-black text-white uppercase">{t.name}</div>
+                                                    <div className="text-emerald-400 font-black text-sm font-mono">{formatCurrency(item.soldPrice, currencyUnit)}</div>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                    {auction.history.length === 0 && (
+                                        <div className="text-slate-600 italic text-sm font-medium">No sales recorded yet...</div>
+                                    )}
+                                </div>
+
+                                {/* WAITING PROMPT (RIGHT) */}
+                                <div className="text-right space-y-1">
+                                    <div className="text-5xl animate-bounce mb-2">🏟️</div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Next Up</h2>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Preparing Stage</p>
                                 </div>
                             </div>
                         )}
