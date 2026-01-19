@@ -10,13 +10,14 @@ interface BidConsoleProps {
     currentBid: number;
     onPlaceBid: (teamId: string, amount: number) => void;
     lastBidderTeamId: string | null;
+    bidIncrements?: number[]; // Optional: category-specific increments
 }
 
 
-export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId }: BidConsoleProps) {
+export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId, bidIncrements: propBidIncrements }: BidConsoleProps) {
     const { state } = useAuction();
     const currencyUnit = state.config.currencyUnit || 'Lakhs';
-    const bidIncrements = state.config.bidIncrements || [500000, 1000000, 2000000, 5000000, 10000000];
+    const bidIncrements = propBidIncrements || state.config.bidIncrements || [500000, 1000000, 2000000, 5000000, 10000000];
     const [increment, setIncrement] = useState(bidIncrements[2] || 2000000); // Default to middle increment
 
     return (

@@ -23,6 +23,7 @@ export default function SettingsPage() {
     const [newOption, setNewOption] = useState<Record<string, string>>({});
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+    const [categoryBidIncrements, setCategoryBidIncrements] = useState<Record<string, number[]>>(state.config.categoryBidIncrements || {});
     const router = useRouter();
 
     // Check if there are unsaved changes
@@ -33,7 +34,8 @@ export default function SettingsPage() {
             currencyUnit !== state.config.currencyUnit ||
             JSON.stringify(categoryLabels) !== JSON.stringify(state.config.categoryLabels) ||
             JSON.stringify(categoryOptions) !== JSON.stringify(state.config.categoryOptions) ||
-            JSON.stringify(bidIncrements) !== JSON.stringify(state.config.bidIncrements)
+            JSON.stringify(bidIncrements) !== JSON.stringify(state.config.bidIncrements) ||
+            JSON.stringify(categoryBidIncrements) !== JSON.stringify(state.config.categoryBidIncrements)
         );
     };
 
@@ -48,13 +50,13 @@ export default function SettingsPage() {
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements]);
+    }, [name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements, categoryBidIncrements]);
 
     const handleSave = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         dispatch({
             type: 'UPDATE_SETTINGS',
-            payload: { tournamentName: name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements }
+            payload: { tournamentName: name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements, categoryBidIncrements }
         });
         alert('Settings Saved!');
     };
@@ -344,6 +346,41 @@ export default function SettingsPage() {
                                                                     placeholder="No max"
                                                                 />
                                                             </div>
+                                                        </div>
+                                                        <div className="space-y-1 mt-2">
+                                                            <label className="text-[9px] text-slate-500 uppercase font-black">Bid Increments</label>
+                                                            <select
+                                                                className="flex h-7 w-full rounded-md border border-slate-700 bg-slate-900/50 px-2 py-1 text-[10px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                value={categoryBidIncrements[opt] ? JSON.stringify(categoryBidIncrements[opt]) : ''}
+                                                                onChange={(e) => {
+                                                                    if (e.target.value === '') {
+                                                                        const updated = { ...categoryBidIncrements };
+                                                                        delete updated[opt];
+                                                                        setCategoryBidIncrements(updated);
+                                                                    } else {
+                                                                        setCategoryBidIncrements({
+                                                                            ...categoryBidIncrements,
+                                                                            [opt]: JSON.parse(e.target.value)
+                                                                        });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <option value="">Use Global Defaults (All 5 Slots)</option>
+                                                                {bidIncrements.map((increment, idx) => {
+                                                                    const singleSlotArray = [increment];
+                                                                    let label = "";
+                                                                    if (increment >= 10000000) label = `${(increment / 10000000).toFixed(1)}Cr`;
+                                                                    else if (increment >= 100000) label = `${(increment / 100000).toFixed(1)}L`;
+                                                                    else label = `${(increment / 1000).toFixed(0)}K`;
+
+                                                                    return (
+                                                                        <option key={idx} value={JSON.stringify(singleSlotArray)}>
+                                                                            Slot {idx + 1} only ({label})
+                                                                        </option>
+                                                                    );
+                                                                })}
+                                                            </select>
+                                                            <p className="text-[8px] text-slate-500 italic">Bid buttons shown when this category player is auctioned</p>
                                                         </div>
                                                     </div>
                                                 ))}

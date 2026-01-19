@@ -15,6 +15,7 @@ interface AppState {
         categoryLabels?: string[];
         categoryOptions?: Record<string, string[]>;
         bidIncrements?: number[];
+        categoryBidIncrements?: Record<string, number[]>;
     };
 };
 
@@ -39,6 +40,7 @@ const initialState: AppState = {
             'Category': ['Marquee', 'Elite', 'International', 'Domestic']
         },
         bidIncrements: [500000, 1000000, 2000000, 5000000, 10000000],
+        categoryBidIncrements: {}, // Bid increments per category option
     },
 };
 
@@ -56,7 +58,18 @@ type Action =
     | { type: 'UNDO_BID' }
     | { type: 'SELL_PLAYER'; payload: { playerId: string; teamId: string; amount: number } }
     | { type: 'PASS_PLAYER'; payload: string } // playerId
-    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules; currencyUnit: 'Lakhs' | 'Crores' | 'Thousands'; categoryLabels?: string[]; categoryOptions?: Record<string, string[]>; bidIncrements?: number[] } }
+    | {
+        type: 'UPDATE_SETTINGS'; payload: {
+            tournamentName: string;
+            rules: SquadRules;
+            currencyUnit: 'Lakhs' | 'Crores' | 'Thousands';
+            categoryLabels?: string[];
+            categoryOptions?: Record<string, string[]>;
+            bidIncrements?: number[];
+            categoryBidIncrements?: Record<string, number[]>;
+            categoryDefaultSlot?: Record<string, number>;
+        }
+    }
     | { type: 'CANCEL_AUCTION_ROUND' }
     | { type: 'RELEASE_PLAYER'; payload: { playerId: string; teamId: string } }
     | { type: 'RESET_AUCTION' };
@@ -332,7 +345,8 @@ function auctionReducer(state: AppState, action: Action): AppState {
                     currencyUnit: action.payload.currencyUnit,
                     categoryLabels: action.payload.categoryLabels,
                     categoryOptions: action.payload.categoryOptions,
-                    bidIncrements: action.payload.bidIncrements
+                    bidIncrements: action.payload.bidIncrements,
+                    categoryBidIncrements: action.payload.categoryBidIncrements
                 }
             };
 

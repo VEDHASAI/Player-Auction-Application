@@ -25,6 +25,20 @@ export default function AuctionPage() {
 
     const activePlayer = players.find(p => p.id === auction.currentPlayerId);
 
+    // Determine bid increments based on player's category
+    const getPlayerBidIncrements = (): number[] | undefined => {
+        if (!activePlayer || !activePlayer.categories) return undefined;
+
+        // Get the first category value from the player's categories
+        const firstCategoryValue = Object.values(activePlayer.categories)[0];
+        if (!firstCategoryValue) return undefined;
+
+        // Look up category-specific increments
+        return state.config.categoryBidIncrements?.[firstCategoryValue];
+    };
+
+    const playerBidIncrements = getPlayerBidIncrements();
+
     const unsoldPlayers = players
         .filter(p => {
             // Show both Available and Unsold (passed) players
@@ -389,6 +403,7 @@ export default function AuctionPage() {
                         currentBid={auction.currentBid}
                         lastBidderTeamId={auction.lastBidderTeamId}
                         onPlaceBid={placeBid}
+                        bidIncrements={playerBidIncrements}
                     />
                 </div>
             </div>

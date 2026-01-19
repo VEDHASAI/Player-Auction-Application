@@ -56,6 +56,7 @@ export interface AppConfig {
   categoryLabels?: string[];
   categoryOptions?: Record<string, string[]>;
   bidIncrements?: number[];
+  categoryBidIncrements?: Record<string, number[]>; // Full bid increments per category option
 }
 
 export interface AuctionHistoryItem {
