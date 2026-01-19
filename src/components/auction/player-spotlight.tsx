@@ -39,6 +39,15 @@ export function PlayerSpotlight({ player, currentBid }: PlayerSpotlightProps) {
                         {player.role}
                     </div>
                     <h1 className="text-3xl md:text-5xl font-black text-white glow-text leading-tight">{player.name}</h1>
+                    {player.categories && Object.entries(player.categories).length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                            {Object.entries(player.categories).map(([label, val]) => (
+                                <span key={label} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded text-[10px] font-bold border border-blue-500/20 uppercase tracking-widest">
+                                    {val}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-1">

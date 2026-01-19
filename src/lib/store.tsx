@@ -12,8 +12,8 @@ interface AppState {
         tournamentName: string;
         rules: SquadRules;
         currencyUnit: 'Lakhs' | 'Crores' | 'Thousands';
-        playerCategories?: string[];
-        categoryLabel?: string;
+        categoryLabels?: string[];
+        categoryOptions?: Record<string, string[]>;
         bidIncrements?: number[];
     };
 };
@@ -34,8 +34,10 @@ const initialState: AppState = {
         tournamentName: "My Auction",
         rules: {},
         currencyUnit: 'Lakhs',
-        playerCategories: ['Marquee', 'Elite', 'International', 'Domestic'],
-        categoryLabel: 'Category',
+        categoryLabels: ['Category'],
+        categoryOptions: {
+            'Category': ['Marquee', 'Elite', 'International', 'Domestic']
+        },
         bidIncrements: [500000, 1000000, 2000000, 5000000, 10000000],
     },
 };
@@ -54,7 +56,7 @@ type Action =
     | { type: 'UNDO_BID' }
     | { type: 'SELL_PLAYER'; payload: { playerId: string; teamId: string; amount: number } }
     | { type: 'PASS_PLAYER'; payload: string } // playerId
-    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules; currencyUnit: 'Lakhs' | 'Crores' | 'Thousands'; playerCategories?: string[]; categoryLabel?: string; bidIncrements?: number[] } }
+    | { type: 'UPDATE_SETTINGS'; payload: { tournamentName: string; rules: SquadRules; currencyUnit: 'Lakhs' | 'Crores' | 'Thousands'; categoryLabels?: string[]; categoryOptions?: Record<string, string[]>; bidIncrements?: number[] } }
     | { type: 'CANCEL_AUCTION_ROUND' }
     | { type: 'RELEASE_PLAYER'; payload: { playerId: string; teamId: string } }
     | { type: 'RESET_AUCTION' };
@@ -63,10 +65,37 @@ type Action =
 function auctionReducer(state: AppState, action: Action): AppState {
     switch (action.type) {
         case 'LOAD_STATE':
+            // Migration logic for multiple categories
+            const loadedState = action.payload;
+            const updatedPlayers = loadedState.players.map(p => {
+                const anyP = p as any;
+                if (anyP.category && !p.categories) {
+                    const firstLabel = loadedState.config.categoryLabels?.[0] || 'Category';
+                    return {
+                        ...p,
+                        categories: { [firstLabel]: anyP.category }
+                    };
+                }
+                return p;
+            });
+
+            // Handle config migration
+            const anyConfig = loadedState.config as any;
+            let updatedConfig = { ...loadedState.config };
+            if (anyConfig.categoryLabel && !updatedConfig.categoryLabels) {
+                updatedConfig.categoryLabels = [anyConfig.categoryLabel];
+                if (anyConfig.playerCategories) {
+                    updatedConfig.categoryOptions = {
+                        [anyConfig.categoryLabel]: anyConfig.playerCategories
+                    };
+                }
+            }
+
             return {
                 ...initialState,
-                ...action.payload,
-                config: action.payload.config || initialState.config
+                ...loadedState,
+                players: updatedPlayers,
+                config: updatedConfig || initialState.config
             };
 
         case 'ADD_TEAM':
@@ -301,8 +330,8 @@ function auctionReducer(state: AppState, action: Action): AppState {
                     tournamentName: action.payload.tournamentName,
                     rules: action.payload.rules,
                     currencyUnit: action.payload.currencyUnit,
-                    playerCategories: action.payload.playerCategories,
-                    categoryLabel: action.payload.categoryLabel,
+                    categoryLabels: action.payload.categoryLabels,
+                    categoryOptions: action.payload.categoryOptions,
                     bidIncrements: action.payload.bidIncrements
                 }
             };

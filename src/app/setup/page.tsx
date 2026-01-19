@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/format";
 import { v4 as uuidv4 } from 'uuid';
 import Papa from 'papaparse';
 import { useRef } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function SetupPage() {
     const { state, dispatch } = useAuction();
@@ -20,6 +21,7 @@ export default function SetupPage() {
     // Editing State
     const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
     const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+    const [showTemplateConfirm, setShowTemplateConfirm] = useState(false);
 
     // Team Form State
     const [teamName, setTeamName] = useState('');
@@ -29,7 +31,7 @@ export default function SetupPage() {
     // Player Form State
     const [playerName, setPlayerName] = useState('');
     const [playerRole, setPlayerRole] = useState<Role>('All-Rounder');
-    const [playerCategory, setPlayerCategory] = useState('');
+    const [playerCategories, setPlayerCategories] = useState<Record<string, string>>({});
     const [playerBasePrice, setPlayerBasePrice] = useState('2000000'); // 20 Lakh default
 
     const handleAddTeam = (e: React.FormEvent) => {
@@ -76,7 +78,7 @@ export default function SetupPage() {
                 id: editingPlayerId,
                 name: playerName,
                 role: playerRole,
-                category: playerCategory,
+                categories: playerCategories,
                 basePrice: parseInt(playerBasePrice),
                 status: 'Available',
             };
@@ -94,7 +96,7 @@ export default function SetupPage() {
                 id: uuidv4(),
                 name: playerName,
                 role: playerRole,
-                category: playerCategory,
+                categories: playerCategories,
                 basePrice: parseInt(playerBasePrice),
                 status: 'Available',
             };
@@ -102,21 +104,30 @@ export default function SetupPage() {
         }
 
         setPlayerName('');
+        setPlayerCategories({});
     };
 
     const handleEditPlayer = (player: Player) => {
         setPlayerName(player.name);
         setPlayerRole(player.role);
-        setPlayerCategory(player.category || '');
+        setPlayerCategories(player.categories || {});
         setPlayerBasePrice(player.basePrice.toString());
         setEditingPlayerId(player.id);
     };
 
+    const triggerDownloadTemplate = () => {
+        setShowTemplateConfirm(true);
+    };
+
     const handleDownloadTemplate = () => {
-        const csv = Papa.unparse([
-            { Name: 'Virat Kohli', Role: 'Batsman', Category: 'Marquee', BasePrice: '2000000' },
-            { Name: 'Jasprit Bumrah', Role: 'Bowler', Category: 'Marquee', BasePrice: '2000000' },
-        ]);
+        setShowTemplateConfirm(false);
+        const labels = state.config.categoryLabels || [];
+        const templateRow: any = { Name: 'Virat Kohli', Role: 'Batsman', BasePrice: '2000000' };
+        labels.forEach(label => {
+            templateRow[label] = label === 'Gender' ? 'Male' : 'Marquee';
+        });
+
+        const csv = Papa.unparse([templateRow]);
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
@@ -138,18 +149,24 @@ export default function SetupPage() {
             complete: (results) => {
                 let successCount = 0;
                 results.data.forEach((row: any) => {
-                    if (row.Name && row.Role && row.BasePrice) {
-                        const newPlayer: Player = {
-                            id: uuidv4(),
-                            name: row.Name,
-                            role: row.Role as Role,
-                            category: row.Category,
-                            basePrice: parseInt(row.BasePrice),
-                            status: 'Available',
-                        };
-                        dispatch({ type: 'ADD_PLAYER', payload: newPlayer });
-                        successCount++;
-                    }
+                    const cats: Record<string, string> = {};
+                    const labels = state.config.categoryLabels || [];
+                    labels.forEach(label => {
+                        if (row[label]) cats[label] = row[label];
+                        // Backward compatibility check for "Category" column if label is "Category"
+                        else if (label === 'Category' && row.Category) cats[label] = row.Category;
+                    });
+
+                    const newPlayer: Player = {
+                        id: uuidv4(),
+                        name: row.Name,
+                        role: row.Role as Role,
+                        categories: cats,
+                        basePrice: parseInt(row.BasePrice),
+                        status: 'Available',
+                    };
+                    dispatch({ type: 'ADD_PLAYER', payload: newPlayer });
+                    successCount++;
                 });
                 alert(`Imported ${successCount} players successfully!`);
                 if (fileInputRef.current) fileInputRef.current.value = '';
@@ -250,7 +267,7 @@ export default function SetupPage() {
                                 Add Player
                             </CardTitle>
                             <div className="flex gap-2">
-                                <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="text-xs h-8">
+                                <Button variant="outline" size="sm" onClick={triggerDownloadTemplate} className="text-xs h-8">
                                     <Download className="w-3 h-3 mr-2" />
                                     Template
                                 </Button>
@@ -298,20 +315,22 @@ export default function SetupPage() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-sm font-medium text-slate-400 mb-1 block">{state.config.categoryLabel || 'Category'} (Optional)</label>
-                                    <Input
-                                        placeholder={`e.g. Marquee`}
-                                        value={playerCategory}
-                                        onChange={(e) => setPlayerCategory(e.target.value)}
-                                        list="category-suggestions"
-                                    />
-                                    <datalist id="category-suggestions">
-                                        {state.config.playerCategories?.map(cat => (
-                                            <option key={cat} value={cat} />
-                                        ))}
-                                    </datalist>
-                                </div>
+                                {state.config.categoryLabels?.map(label => (
+                                    <div key={label}>
+                                        <label className="text-sm font-medium text-slate-400 mb-1 block">{label} (Optional)</label>
+                                        <Input
+                                            placeholder={`e.g. ${label === 'Gender' ? 'Male' : 'Marquee'}`}
+                                            value={playerCategories[label] || ''}
+                                            onChange={(e) => setPlayerCategories({ ...playerCategories, [label]: e.target.value })}
+                                            list={`suggestions-${label}`}
+                                        />
+                                        <datalist id={`suggestions-${label}`}>
+                                            {state.config.categoryOptions?.[label]?.map(opt => (
+                                                <option key={opt} value={opt} />
+                                            ))}
+                                        </datalist>
+                                    </div>
+                                ))}
 
                                 <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 shadow-purple-500/20">
                                     {editingPlayerId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
@@ -333,7 +352,9 @@ export default function SetupPage() {
                                         <div>
                                             <div className="font-semibold text-white">{player.name}</div>
                                             <div className="text-xs text-slate-400">
-                                                {player.role} • {player.category && <span className="text-blue-400 font-bold">{player.category} • </span>} {formatCurrency(player.basePrice, currencyUnit)}
+                                                {player.role} • {player.categories && Object.entries(player.categories).map(([label, val]) => (
+                                                    <span key={label} className="text-blue-400 font-bold">{val} • </span>
+                                                ))} {formatCurrency(player.basePrice, currencyUnit)}
                                             </div>
                                         </div>
                                         <div className="flex gap-1">
@@ -361,6 +382,16 @@ export default function SetupPage() {
                     </Card>
                 </div>
             </div>
+            <ConfirmDialog
+                isOpen={showTemplateConfirm}
+                title="Configure Settings First?"
+                description="Please ensure you have configured all Tournament Settings (Categories, Labels, etc.) before downloading the template. This ensures your CSV will have the correct columns for your specific auction."
+                onConfirm={handleDownloadTemplate}
+                onCancel={() => setShowTemplateConfirm(false)}
+                confirmText="Download Anyway"
+                cancelText="Not Now"
+                variant="info"
+            />
         </div>
     );
 }

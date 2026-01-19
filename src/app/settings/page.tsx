@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuction } from '@/lib/store';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -15,19 +16,66 @@ export default function SettingsPage() {
     const [name, setName] = useState(state.config.tournamentName);
     const [rules, setRules] = useState(state.config.rules || {});
     const [currencyUnit, setCurrencyUnit] = useState(state.config.currencyUnit || 'Lakhs');
-    const [playerCategories, setPlayerCategories] = useState(state.config.playerCategories || []);
     const [bidIncrements, setBidIncrements] = useState(state.config.bidIncrements || [500000, 1000000, 2000000, 5000000, 10000000]);
-    const [categoryLabel, setCategoryLabel] = useState(state.config.categoryLabel || 'Category');
-    const [newCategory, setNewCategory] = useState('');
+    const [categoryLabels, setCategoryLabels] = useState<string[]>(state.config.categoryLabels || ['Category']);
+    const [categoryOptions, setCategoryOptions] = useState<Record<string, string[]>>(state.config.categoryOptions || { 'Category': [] });
+    const [newLabel, setNewLabel] = useState('');
+    const [newOption, setNewOption] = useState<Record<string, string>>({});
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+    const router = useRouter();
 
-    const handleSave = (e: React.FormEvent) => {
-        e.preventDefault();
+    // Check if there are unsaved changes
+    const checkIsDirty = () => {
+        return (
+            name !== state.config.tournamentName ||
+            JSON.stringify(rules) !== JSON.stringify(state.config.rules) ||
+            currencyUnit !== state.config.currencyUnit ||
+            JSON.stringify(categoryLabels) !== JSON.stringify(state.config.categoryLabels) ||
+            JSON.stringify(categoryOptions) !== JSON.stringify(state.config.categoryOptions) ||
+            JSON.stringify(bidIncrements) !== JSON.stringify(state.config.bidIncrements)
+        );
+    };
+
+    // Warn on page refresh or external navigation
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (checkIsDirty()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements]);
+
+    const handleSave = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         dispatch({
             type: 'UPDATE_SETTINGS',
-            payload: { tournamentName: name, rules, currencyUnit, playerCategories, categoryLabel, bidIncrements }
+            payload: { tournamentName: name, rules, currencyUnit, categoryLabels, categoryOptions, bidIncrements }
         });
         alert('Settings Saved!');
+    };
+
+    const handleBackClick = () => {
+        if (checkIsDirty()) {
+            setShowUnsavedConfirm(true);
+        } else {
+            router.push('/');
+        }
+    };
+
+    const handleSaveAndLeave = () => {
+        handleSave();
+        setShowUnsavedConfirm(false);
+        router.push('/');
+    };
+
+    const handleDiscardAndLeave = () => {
+        setShowUnsavedConfirm(false);
+        router.push('/');
     };
 
     const updateRule = (key: keyof typeof rules, value: string) => {
@@ -85,9 +133,13 @@ export default function SettingsPage() {
         <div className="container mx-auto p-6 max-w-4xl space-y-8">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-white">System Settings</h1>
-                <Link href="/" className="text-blue-400 hover:text-blue-300">
+                <Button
+                    variant="ghost"
+                    onClick={handleBackClick}
+                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                >
                     Back to Dashboard
-                </Link>
+                </Button>
             </div>
 
             <Card className="border-slate-800 bg-[#111827]">
@@ -141,18 +193,56 @@ export default function SettingsPage() {
                                     <p className="text-[10px] text-slate-500 italic">Select how amounts should be shown throughout the application.</p>
                                 </div>
 
-                                {/* Category Label Configuration */}
-                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                {/* Category Labels Configuration */}
+                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-4 shadow-inner">
                                     <h4 className="text-sm font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                                        <Pencil className="w-4 h-4" /> Player Category Label
+                                        <Pencil className="w-4 h-4" /> Player Category Labels
                                     </h4>
-                                    <Input
-                                        value={categoryLabel}
-                                        onChange={(e) => setCategoryLabel(e.target.value)}
-                                        placeholder="e.g. Category"
-                                        className="bg-slate-900/50 border-slate-700 text-white h-9"
-                                    />
-                                    <p className="text-[10px] text-slate-500 italic">Customize what this extra player field is called (e.g., "Tier").</p>
+
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={newLabel}
+                                            onChange={(e) => setNewLabel(e.target.value)}
+                                            placeholder="e.g. Gender"
+                                            className="bg-slate-900/50 border-slate-700 text-white h-9"
+                                        />
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                if (newLabel && !categoryLabels.includes(newLabel)) {
+                                                    setCategoryLabels([...categoryLabels, newLabel]);
+                                                    setCategoryOptions({ ...categoryOptions, [newLabel]: [] });
+                                                    setNewLabel('');
+                                                }
+                                            }}
+                                            className="h-9 px-4"
+                                            variant="outline"
+                                        >
+                                            Add Label
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {categoryLabels.map((label) => (
+                                            <div key={label} className="p-3 bg-slate-950/50 rounded border border-slate-800 flex items-center justify-between group">
+                                                <span className="text-white font-bold">{label}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const freshLabels = categoryLabels.filter(l => l !== label);
+                                                        setCategoryLabels(freshLabels);
+                                                        const freshOptions = { ...categoryOptions };
+                                                        delete freshOptions[label];
+                                                        setCategoryOptions(freshOptions);
+                                                    }}
+                                                    className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 italic">Define multiple tags per player (e.g., "Gender", "Marquee Status").</p>
                                 </div>
 
                                 {/* Bid Increments Configuration */}
@@ -180,81 +270,89 @@ export default function SettingsPage() {
                                     <p className="text-[10px] text-slate-500 italic">Configure the 5 quick-bid increment buttons available in the auction room.</p>
                                 </div>
 
-                                {/* Player Categories Management */}
-                                <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
-                                    <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                                        <User className="w-4 h-4" /> Player Categories
-                                    </h4>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            value={newCategory}
-                                            onChange={(e) => setNewCategory(e.target.value)}
-                                            placeholder="e.g. Marquee"
-                                            className="bg-slate-900/50 border-slate-700 text-white h-9"
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (newCategory && !playerCategories.includes(newCategory)) {
-                                                    setPlayerCategories([...playerCategories, newCategory]);
-                                                    setNewCategory('');
-                                                }
-                                            }}
-                                            className="h-9 px-4"
-                                            variant="outline"
-                                        >
-                                            Add
-                                        </Button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 pt-2">
-                                        {playerCategories.map((cat) => (
-                                            <div key={cat} className="flex flex-col gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 group w-full md:w-[calc(50%-0.5rem)]">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-blue-400 text-xs font-bold">{cat}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setPlayerCategories(playerCategories.filter(c => c !== cat));
-                                                            setRules(prev => {
-                                                                const categoryRules = { ...(prev.categoryRules || {}) };
-                                                                delete categoryRules[cat];
-                                                                return { ...prev, categoryRules };
+                                {/* Dynamic Category Options Management */}
+                                <div className="space-y-6">
+                                    {categoryLabels.map((label) => (
+                                        <div key={label} className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
+                                            <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                                <User className="w-4 h-4" /> {label} Options
+                                            </h4>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    value={newOption[label] || ''}
+                                                    onChange={(e) => setNewOption({ ...newOption, [label]: e.target.value })}
+                                                    placeholder={`e.g. ${label === 'Gender' ? 'Male' : 'Marquee'}`}
+                                                    className="bg-slate-900/50 border-slate-700 text-white h-9"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const opt = newOption[label];
+                                                        if (opt && !categoryOptions[label].includes(opt)) {
+                                                            setCategoryOptions({
+                                                                ...categoryOptions,
+                                                                [label]: [...categoryOptions[label], opt]
                                                             });
-                                                        }}
-                                                        className="hover:text-red-400 transition-colors"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="space-y-1">
-                                                        <label className="text-[9px] text-slate-500 uppercase font-black">Min</label>
-                                                        <Input
-                                                            type="number"
-                                                            value={rules.categoryRules?.[cat]?.min ?? ''}
-                                                            onChange={(e) => updateCategoryRule(cat, 'min', e.target.value)}
-                                                            className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
-                                                            placeholder="No min"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <label className="text-[9px] text-slate-500 uppercase font-black">Max</label>
-                                                        <Input
-                                                            type="number"
-                                                            value={rules.categoryRules?.[cat]?.max ?? ''}
-                                                            onChange={(e) => updateCategoryRule(cat, 'max', e.target.value)}
-                                                            className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
-                                                            placeholder="No max"
-                                                        />
-                                                    </div>
-                                                </div>
+                                                            setNewOption({ ...newOption, [label]: '' });
+                                                        }
+                                                    }}
+                                                    className="h-9 px-4"
+                                                    variant="outline"
+                                                >
+                                                    Add
+                                                </Button>
                                             </div>
-                                        ))}
-                                        {playerCategories.length === 0 && (
-                                            <p className="text-[10px] text-slate-500 italic">No categories defined. All players will be uncategorized.</p>
-                                        )}
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 italic pt-1">Define categories like Marquee, Elite, Uncapped, etc. These will be available for tagging players.</p>
+                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                {(categoryOptions[label] || []).map((opt) => (
+                                                    <div key={opt} className="flex flex-col gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 group w-full md:w-[calc(50%-0.5rem)]">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-blue-400 text-xs font-bold">{opt}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const freshOpts = categoryOptions[label].filter(o => o !== opt);
+                                                                    setCategoryOptions({ ...categoryOptions, [label]: freshOpts });
+                                                                    setRules(prev => {
+                                                                        const categoryRules = { ...(prev.categoryRules || {}) };
+                                                                        delete categoryRules[opt];
+                                                                        return { ...prev, categoryRules };
+                                                                    });
+                                                                }}
+                                                                className="hover:text-red-400 transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="space-y-1">
+                                                                <label className="text-[9px] text-slate-500 uppercase font-black">Min</label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={rules.categoryRules?.[opt]?.min ?? ''}
+                                                                    onChange={(e) => updateCategoryRule(opt, 'min', e.target.value)}
+                                                                    className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
+                                                                    placeholder="No min"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-[9px] text-slate-500 uppercase font-black">Max</label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={rules.categoryRules?.[opt]?.max ?? ''}
+                                                                    onChange={(e) => updateCategoryRule(opt, 'max', e.target.value)}
+                                                                    className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
+                                                                    placeholder="No max"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {categoryOptions[label]?.length === 0 && (
+                                                    <p className="text-[10px] text-slate-500 italic">No options defined for {label}.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Total Budget */}
@@ -466,6 +564,19 @@ export default function SettingsPage() {
                 extraActionText={hasAuctionData ? "Save & Reset" : undefined}
                 onExtraAction={hasAuctionData ? () => { exportAuctionDataToCSV(); handleReset(); } : undefined}
                 variant="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={showUnsavedConfirm}
+                onConfirm={handleSaveAndLeave}
+                onCancel={() => setShowUnsavedConfirm(false)}
+                title="Unsaved Changes"
+                description="You have unsaved changes in your settings. Would you like to save them before leaving?"
+                confirmText="Save & Leave"
+                cancelText="Stay"
+                extraActionText="Discard Changes"
+                onExtraAction={handleDiscardAndLeave}
+                variant="warning"
             />
         </div>
     );

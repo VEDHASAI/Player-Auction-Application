@@ -22,8 +22,17 @@ export function PresentationView() {
     const prevHistoryLen = useRef(auction.history.length);
     const prevPlayers = useRef(players);
     const prevCurrentPlayerId = useRef(currentPlayerId);
+    const isInitialized = useRef(false);
 
     useEffect(() => {
+        if (!isInitialized.current) {
+            prevHistoryLen.current = auction.history.length;
+            prevPlayers.current = players;
+            prevCurrentPlayerId.current = currentPlayerId;
+            isInitialized.current = true;
+            return;
+        }
+
         // Detect SOLD
         if (auction.history.length > prevHistoryLen.current) {
             const latestSold = auction.history[0];
@@ -106,8 +115,15 @@ export function PresentationView() {
                                             <h2 className="text-4xl font-black tracking-tighter text-white uppercase leading-none">
                                                 {currentPlayer.name}
                                             </h2>
-                                            <div className="inline-block bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">
-                                                {currentPlayer.role}
+                                            <div className="flex gap-2 items-center">
+                                                <div className="inline-block bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded text-[9px] font-black text-blue-400 uppercase tracking-[0.2em]">
+                                                    {currentPlayer.role}
+                                                </div>
+                                                {currentPlayer.categories && Object.entries(currentPlayer.categories).map(([label, val]) => (
+                                                    <div key={label} className="inline-block bg-purple-500/20 border border-purple-500/30 px-2 py-0.5 rounded text-[9px] font-black text-purple-400 uppercase tracking-[0.2em]">
+                                                        {val}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-0">

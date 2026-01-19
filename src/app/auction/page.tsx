@@ -20,7 +20,7 @@ export default function AuctionPage() {
 
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState("All");
-    const [categoryFilter, setCategoryFilter] = useState("All");
+    const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>({});
     const [showExitConfirm, setShowExitConfirm] = useState(false);
 
     const activePlayer = players.find(p => p.id === auction.currentPlayerId);
@@ -33,9 +33,13 @@ export default function AuctionPage() {
 
             const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesRole = roleFilter === "All" || p.role === roleFilter;
-            const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
 
-            return matchesSearch && matchesRole && matchesCategory;
+            const matchesCategories = Object.entries(categoryFilters).every(([label, value]) => {
+                if (value === "All") return true;
+                return p.categories?.[label] === value;
+            });
+
+            return matchesSearch && matchesRole && matchesCategories;
         })
         .sort((a, b) => {
             // Sort by Status: Available first, then Unsold
@@ -126,12 +130,15 @@ export default function AuctionPage() {
         }
 
         // 4. Category Specific Max Check
-        const categoryLabel = state.config.categoryLabel || 'Category';
-        if (activePlayer.category && rules.categoryRules?.[activePlayer.category]?.max) {
-            const currentCatCount = playersInTeam.filter(p => p.category === activePlayer.category).length;
-            if (currentCatCount >= rules.categoryRules[activePlayer.category].max!) {
-                alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.categoryRules[activePlayer.category].max} ${activePlayer.category} players.`);
-                return;
+        if (activePlayer.categories && rules.categoryRules) {
+            for (const [label, cat] of Object.entries(activePlayer.categories)) {
+                if (rules.categoryRules[cat]?.max) {
+                    const currentCatCount = playersInTeam.filter(p => p.categories?.[label] === cat).length;
+                    if (currentCatCount >= rules.categoryRules[cat].max!) {
+                        alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.categoryRules[cat].max} ${cat} players.`);
+                        return;
+                    }
+                }
             }
         }
 
@@ -142,14 +149,15 @@ export default function AuctionPage() {
 
             Object.entries(rules.categoryRules).forEach(([cat, catRule]) => {
                 if (catRule.min) {
-                    const currentCatCount = playersInTeam.filter(p => p.category === cat).length;
-                    const nextCatCount = activePlayer.category === cat ? currentCatCount + 1 : currentCatCount;
+                    // Check if this category exists in any label for any team player
+                    const currentCatCount = playersInTeam.filter(p => p.categories && Object.values(p.categories).includes(cat)).length;
+                    const nextCatCount = activePlayer.categories && Object.values(activePlayer.categories).includes(cat) ? currentCatCount + 1 : currentCatCount;
                     mandatoryOtherCategories += Math.max(0, catRule.min - nextCatCount);
                 }
             });
 
             if (mandatoryOtherCategories > slotsAfterThis) {
-                alert(`Rule Violation: Buying this player leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherCategories} more players of other ${categoryLabel.toLowerCase()}s to meet the minimum requirements.`);
+                alert(`Rule Violation: Buying this player leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherCategories} more players of other categories to meet the minimum requirements.`);
                 return;
             }
         }
@@ -228,16 +236,19 @@ export default function AuctionPage() {
                             <option key={role} value={role}>{role}</option>
                         ))}
                     </select>
-                    <select
-                        className="h-10 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-sm text-slate-200 focus:outline-none focus:border-blue-500 w-full md:w-48"
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                    >
-                        <option value="All">All {state.config.categoryLabel || 'Categories'}</option>
-                        {Array.from(new Set(players.filter(p => p.category).map(p => p.category))).map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+                    {state.config.categoryLabels?.map(label => (
+                        <select
+                            key={label}
+                            className="h-10 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-md text-sm text-slate-200 focus:outline-none focus:border-blue-500 w-full md:w-48"
+                            value={categoryFilters[label] || "All"}
+                            onChange={(e) => setCategoryFilters({ ...categoryFilters, [label]: e.target.value })}
+                        >
+                            <option value="All">All {label}s</option>
+                            {Array.from(new Set(players.filter(p => p.categories?.[label]).map(p => p.categories![label]))).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    ))}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -257,9 +268,13 @@ export default function AuctionPage() {
                         >
                             <div className="w-20 h-20 rounded-full bg-[#0F172A] flex items-center justify-center group-hover:bg-blue-500/20 transition-colors relative">
                                 <User className="w-10 h-10 text-slate-400 group-hover:text-blue-400" />
-                                {player.category && (
-                                    <div className="absolute -top-1 -right-1 w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#111827]">
-                                        {player.category.charAt(0).toUpperCase()}
+                                {player.categories && Object.values(player.categories).length > 0 && (
+                                    <div className="absolute -top-1 -right-1 flex gap-1">
+                                        {Object.values(player.categories).map((val, idx) => (
+                                            <div key={idx} className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#111827]">
+                                                {val.charAt(0).toUpperCase()}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

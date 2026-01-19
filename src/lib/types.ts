@@ -11,7 +11,7 @@ export interface Player {
   soldPrice?: number;
   soldToTeamId?: string;
   imageUrl?: string;
-  category?: string;
+  categories?: Record<string, string>;
 }
 
 export interface Team {
@@ -53,8 +53,8 @@ export interface AppConfig {
   tournamentName: string;
   rules: SquadRules;
   currencyUnit: CurrencyUnit;
-  playerCategories?: string[];
-  categoryLabel?: string;
+  categoryLabels?: string[];
+  categoryOptions?: Record<string, string[]>;
   bidIncrements?: number[];
 }
 
