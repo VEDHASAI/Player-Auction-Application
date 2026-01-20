@@ -27,7 +27,7 @@ export function Header() {
         <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/50 backdrop-blur-xl supports-backdrop-filter:bg-slate-900/50">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="Logo" width={32} height={32} className="rounded-md" />
+                    <Image src="/public/logo.jpg" alt="Logo" width={32} height={32} className="rounded-md" />
                     <span className="font-bold text-lg tracking-tight py-1">
                         <span className="text-[#61BE35]">TCL</span>
                         <span className="text-white">AUCTION</span>
