@@ -85,7 +85,7 @@ export default function SettingsPage() {
         setRules(prev => ({ ...prev, [key]: num }));
     };
 
-    const updateCategoryRule = (cat: string, type: 'min' | 'max', value: string) => {
+    const updateCategoryRule = (cat: string, type: 'min' | 'max' | 'basePrice', value: string) => {
         const num = value === '' ? undefined : parseInt(value);
         setRules(prev => {
             const categoryRules = { ...(prev.categoryRules || {}) };
@@ -348,6 +348,16 @@ export default function SettingsPage() {
                                                             </div>
                                                         </div>
                                                         <div className="space-y-1 mt-2">
+                                                            <label className="text-[9px] text-slate-500 uppercase font-black">Base Price (₹)</label>
+                                                            <Input
+                                                                type="number"
+                                                                value={rules.categoryRules?.[opt]?.basePrice ?? ''}
+                                                                onChange={(e) => updateCategoryRule(opt, 'basePrice', e.target.value)}
+                                                                className="bg-slate-900/50 border-slate-700 text-white h-7 text-[10px]"
+                                                                placeholder="Override Base Price"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1 mt-2">
                                                             <label className="text-[9px] text-slate-500 uppercase font-black">Bid Increments</label>
                                                             <select
                                                                 className="flex h-7 w-full rounded-md border border-slate-700 bg-slate-900/50 px-2 py-1 text-[10px] text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -410,6 +420,21 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <p className="text-[10px] text-slate-500 italic">This will be the base budget for all teams in the tournament.</p>
+                                    </div>
+
+                                    <div className="space-y-1.5 mt-4">
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Global Default Base Price (₹)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
+                                            <Input
+                                                type="number"
+                                                value={rules.defaultBasePrice ?? ''}
+                                                onChange={(e) => updateRule('defaultBasePrice', e.target.value)}
+                                                placeholder="e.g. 2000000"
+                                                className="bg-slate-900/50 border-slate-700 text-white h-10 pl-8 text-sm font-mono"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 italic">Fall-back base price for players if their category doesn't have one.</p>
                                     </div>
                                 </div>
 

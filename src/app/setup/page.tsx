@@ -1,22 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuction } from '@/lib/store';
 import { Team, Player, Role, ROLES, DEFAULT_BUDGET } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Plus, Users, UserPlus, Upload, Download, Pencil } from 'lucide-react';
-import { formatCurrency } from "@/lib/format";
+import { Trash2, Plus, Users, UserPlus, Upload, Download, Pencil, ImagePlus, X } from 'lucide-react';
+import { formatCurrency, getEffectiveBasePrice } from "@/lib/format";
 import { v4 as uuidv4 } from 'uuid';
 import Papa from 'papaparse';
-import { useRef } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import Image from 'next/image';
 
 export default function SetupPage() {
     const { state, dispatch } = useAuction();
     const currencyUnit = state.config.currencyUnit || 'Lakhs';
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     // Editing State
     const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
@@ -27,12 +28,24 @@ export default function SetupPage() {
     const [teamName, setTeamName] = useState('');
     const defaultBudget = state.config.rules.totalBudget || DEFAULT_BUDGET;
     const [teamBudget, setTeamBudget] = useState(defaultBudget.toString());
+    const [teamLogo, setTeamLogo] = useState<string | null>(null);
 
     // Player Form State
     const [playerName, setPlayerName] = useState('');
     const [playerRole, setPlayerRole] = useState<Role>('All-Rounder');
     const [playerCategories, setPlayerCategories] = useState<Record<string, string>>({});
     const [playerBasePrice, setPlayerBasePrice] = useState('2000000'); // 20 Lakh default
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setTeamLogo(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleAddTeam = (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,6 +58,7 @@ export default function SetupPage() {
                 totalBudget: parseInt(teamBudget),
                 remainingBudget: 0, // Will be recalculated in reducer
                 players: [], // Preserved in reducer
+                logoUrl: teamLogo || undefined,
             };
             dispatch({ type: 'UPDATE_TEAM', payload: updatedTeam });
             setEditingTeamId(null);
@@ -55,23 +69,55 @@ export default function SetupPage() {
                 totalBudget: parseInt(teamBudget),
                 remainingBudget: parseInt(teamBudget),
                 players: [],
+                logoUrl: teamLogo || undefined,
             };
             dispatch({ type: 'ADD_TEAM', payload: newTeam });
         }
 
         setTeamName('');
         setTeamBudget(defaultBudget.toString());
+        setTeamLogo(null);
     };
 
     const handleEditTeam = (team: Team) => {
         setTeamName(team.name);
         setTeamBudget(team.totalBudget.toString());
+        setTeamLogo(team.logoUrl || null);
         setEditingTeamId(team.id);
+    };
+
+    const calculateBasePrice = (categories: Record<string, string>, csvPrice?: number) => {
+        const rules = state.config.rules;
+
+        // 1. Check for Category Match (Highest priority)
+        if (categories && rules.categoryRules) {
+            for (const cat of Object.values(categories)) {
+                const catRule = rules.categoryRules[cat];
+                if (catRule?.basePrice) {
+                    return catRule.basePrice;
+                }
+            }
+        }
+
+        // 2. Check for CSV price/manual price if provided
+        if (csvPrice !== undefined && !isNaN(csvPrice)) {
+            return csvPrice;
+        }
+
+        // 3. Global Default Base Price
+        if (rules.defaultBasePrice) {
+            return rules.defaultBasePrice;
+        }
+
+        // 4. Absolute Fallback
+        return 2000000;
     };
 
     const handleAddPlayer = (e: React.FormEvent) => {
         e.preventDefault();
         if (!playerName) return;
+
+        const basePrice = calculateBasePrice(playerCategories, parseInt(playerBasePrice));
 
         if (editingPlayerId) {
             const updatedPlayer: Player = {
@@ -79,13 +125,9 @@ export default function SetupPage() {
                 name: playerName,
                 role: playerRole,
                 categories: playerCategories,
-                basePrice: parseInt(playerBasePrice),
+                basePrice: basePrice,
                 status: 'Available',
             };
-            // To preserve status, we should check state inside reducer or pass it.
-            // Reducer replacement handles it if we pass full object.
-            // Let's assume for Setup page edits they are likely Available.
-            // If we want to be safe, we hunt for the original status.
             const original = state.players.find(p => p.id === editingPlayerId);
             if (original) updatedPlayer.status = original.status;
 
@@ -97,7 +139,7 @@ export default function SetupPage() {
                 name: playerName,
                 role: playerRole,
                 categories: playerCategories,
-                basePrice: parseInt(playerBasePrice),
+                basePrice: basePrice,
                 status: 'Available',
             };
             dispatch({ type: 'ADD_PLAYER', payload: newPlayer });
@@ -105,6 +147,7 @@ export default function SetupPage() {
 
         setPlayerName('');
         setPlayerCategories({});
+        setPlayerBasePrice(state.config.rules.defaultBasePrice?.toString() || '2000000');
     };
 
     const handleEditPlayer = (player: Player) => {
@@ -122,7 +165,7 @@ export default function SetupPage() {
     const handleDownloadTemplate = () => {
         setShowTemplateConfirm(false);
         const labels = state.config.categoryLabels || [];
-        const templateRow: any = { Name: 'Virat Kohli', Role: 'Batsman', BasePrice: '2000000' };
+        const templateRow: any = { Name: 'Virat Kohli', Role: 'Batsman', BasePrice: state.config.rules.defaultBasePrice || '2000000' };
         labels.forEach(label => {
             templateRow[label] = label === 'Gender' ? 'Male' : 'Marquee';
         });
@@ -153,16 +196,18 @@ export default function SetupPage() {
                     const labels = state.config.categoryLabels || [];
                     labels.forEach(label => {
                         if (row[label]) cats[label] = row[label];
-                        // Backward compatibility check for "Category" column if label is "Category"
                         else if (label === 'Category' && row.Category) cats[label] = row.Category;
                     });
+
+                    // Logic: Category Base Price overrides CSV price. CSV price overrides Global Default.
+                    const finalBasePrice = calculateBasePrice(cats, parseInt(row.BasePrice));
 
                     const newPlayer: Player = {
                         id: uuidv4(),
                         name: row.Name,
                         role: row.Role as Role,
                         categories: cats,
-                        basePrice: parseInt(row.BasePrice),
+                        basePrice: finalBasePrice,
                         status: 'Available',
                     };
                     dispatch({ type: 'ADD_PLAYER', payload: newPlayer });
@@ -196,6 +241,40 @@ export default function SetupPage() {
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleAddTeam} className="space-y-4">
+                                <div className="flex flex-col items-center gap-4 mb-4">
+                                    <div
+                                        onClick={() => logoInputRef.current?.click()}
+                                        className="relative w-24 h-24 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/50 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-blue-500 hover:bg-slate-800 group overflow-hidden"
+                                    >
+                                        {teamLogo ? (
+                                            <>
+                                                <Image src={teamLogo} alt="Team Logo" fill className="object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                    <Pencil className="w-6 h-6 text-white" />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setTeamLogo(null); }}
+                                                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                                >
+                                                    <X className="w-3 h-3 text-white" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ImagePlus className="w-8 h-8 text-slate-500 mb-1 group-hover:text-blue-400" />
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-blue-400">Add Logo</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="file"
+                                        ref={logoInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleLogoUpload}
+                                    />
+                                </div>
                                 <div>
                                     <label className="text-sm font-medium text-slate-400 mb-1 block">Team Name</label>
                                     <Input
@@ -229,9 +308,20 @@ export default function SetupPage() {
                                 {state.teams.length === 0 && <p className="text-slate-500 text-center py-4">No teams added yet.</p>}
                                 {state.teams.map((team) => (
                                     <div key={team.id} className="flex items-center justify-between p-3 bg-[#1E293B] rounded-lg border border-slate-700/50">
-                                        <div>
-                                            <div className="font-semibold text-white">{team.name}</div>
-                                            <div className="text-xs text-slate-400">Budget: ₹{(team.totalBudget / 10000000).toFixed(2)} Cr</div>
+                                        <div className="flex items-center gap-3">
+                                            {team.logoUrl ? (
+                                                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-700 bg-slate-900">
+                                                    <Image src={team.logoUrl} alt={team.name} fill className="object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700 text-slate-500 font-bold uppercase text-xs">
+                                                    {team.name.charAt(0)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-semibold text-white">{team.name}</div>
+                                                <div className="text-xs text-slate-400">Budget: ₹{(team.totalBudget / 10000000).toFixed(2)} Cr</div>
+                                            </div>
                                         </div>
                                         <div className="flex gap-1">
                                             <Button
@@ -354,7 +444,7 @@ export default function SetupPage() {
                                             <div className="text-xs text-slate-400">
                                                 {player.role} • {player.categories && Object.entries(player.categories).map(([label, val]) => (
                                                     <span key={label} className="text-blue-400 font-bold">{val} • </span>
-                                                ))} {formatCurrency(player.basePrice, currencyUnit)}
+                                                ))} {formatCurrency(getEffectiveBasePrice(player, state.config.rules), currencyUnit)}
                                             </div>
                                         </div>
                                         <div className="flex gap-1">

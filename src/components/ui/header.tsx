@@ -10,6 +10,8 @@ function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
 
+import Image from 'next/image';
+
 export function Header() {
     const pathname = usePathname();
 
@@ -22,12 +24,13 @@ export function Header() {
     ];
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/50 backdrop-blur-xl supports-[backdrop-filter]:bg-slate-900/50">
+        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-900/50 backdrop-blur-xl supports-backdrop-filter:bg-slate-900/50">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
-                    <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 text-transparent bg-clip-text py-1">
-                        AUCTION<span className="text-white">HERE</span>
+                    <Image src="/logo.png" alt="Logo" width={32} height={32} className="rounded-md" />
+                    <span className="font-bold text-lg tracking-tight py-1">
+                        <span className="text-[#61BE35]">TCL</span>
+                        <span className="text-white">AUCTION</span>
                     </span>
                 </div>
 

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { Player, Team, AuctionState, AuctionHistoryItem, DEFAULT_BUDGET, SquadRules } from './types';
+import { formatCurrency, getEffectiveBasePrice } from './format';
 
 // State Definition
 interface AppState {
@@ -17,7 +18,7 @@ interface AppState {
         bidIncrements?: number[];
         categoryBidIncrements?: Record<string, number[]>;
     };
-};
+}
 
 // Initial State
 const initialState: AppState = {
@@ -33,7 +34,9 @@ const initialState: AppState = {
     },
     config: {
         tournamentName: "My Auction",
-        rules: {},
+        rules: {
+            defaultBasePrice: 2000000
+        },
         currencyUnit: 'Lakhs',
         categoryLabels: ['Category'],
         categoryOptions: {
@@ -77,7 +80,7 @@ type Action =
 // Reducer
 function auctionReducer(state: AppState, action: Action): AppState {
     switch (action.type) {
-        case 'LOAD_STATE':
+        case 'LOAD_STATE': {
             // Migration logic for multiple categories
             const loadedState = action.payload;
             const updatedPlayers = loadedState.players.map(p => {
@@ -110,6 +113,7 @@ function auctionReducer(state: AppState, action: Action): AppState {
                 players: updatedPlayers,
                 config: updatedConfig || initialState.config
             };
+        }
 
         case 'ADD_TEAM':
             return { ...state, teams: [...state.teams, action.payload] };
@@ -151,12 +155,15 @@ function auctionReducer(state: AppState, action: Action): AppState {
         case 'START_AUCTION_FOR_PLAYER': {
             const player = state.players.find(p => p.id === action.payload);
             if (!player) return state;
+
+            const resolvedBasePrice = getEffectiveBasePrice(player, state.config.rules);
+
             return {
                 ...state,
                 auction: {
                     ...state.auction,
                     currentPlayerId: player.id,
-                    currentBid: player.basePrice, // Start at base price
+                    currentBid: resolvedBasePrice,
                     lastBidderTeamId: null,
                     bidHistory: [], // Reset bid history for new player
                     isAuctionActive: true,
@@ -318,7 +325,11 @@ function auctionReducer(state: AppState, action: Action): AppState {
             return {
                 ...state,
                 teams: updatedTeams,
-                players: updatedPlayers
+                players: updatedPlayers,
+                auction: {
+                    ...state.auction,
+                    history: state.auction.history.filter(item => item.playerId !== playerId)
+                }
             };
         }
 
@@ -349,7 +360,6 @@ function auctionReducer(state: AppState, action: Action): AppState {
                     categoryBidIncrements: action.payload.categoryBidIncrements
                 }
             };
-
 
         case 'RESET_AUCTION':
             return initialState;

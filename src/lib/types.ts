@@ -20,6 +20,7 @@ export interface Team {
   totalBudget: number;
   remainingBudget: number;
   players: string[]; // List of player IDs
+  logoUrl?: string;
 }
 
 export interface AuctionState {
@@ -43,8 +44,9 @@ export interface SquadRules {
   maxAllRounders?: number;
   minWicketKeepers?: number;
   maxWicketKeepers?: number;
-  categoryRules?: Record<string, { min?: number, max?: number }>;
+  categoryRules?: Record<string, { min?: number, max?: number, basePrice?: number }>;
   totalBudget?: number;
+  defaultBasePrice?: number;
 }
 
 export type CurrencyUnit = 'Lakhs' | 'Crores' | 'Thousands';
