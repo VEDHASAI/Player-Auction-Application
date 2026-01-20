@@ -82,7 +82,7 @@ export function PresentationView() {
             {/* 1. BROADCAST HEADER */}
             <header className="flex justify-between items-center border-b border-white/10 pb-2">
                 <div className="flex items-center gap-4">
-                    <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg shadow-lg" />
+                    {/* <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg shadow-lg" /> */}
                     <div className="flex flex-col">
                         <h1 className="text-3xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text py-0.5 tracking-tighter">
                             {state.config.tournamentName}
