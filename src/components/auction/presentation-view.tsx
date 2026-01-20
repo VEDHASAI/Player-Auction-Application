@@ -3,9 +3,12 @@
 import { useAuction } from '@/lib/store';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, getEffectiveBasePrice } from '@/lib/format';
 import { useEffect, useRef, useState } from 'react';
-import { User, Trophy, XCircle } from 'lucide-react';
+import { User, Trophy, XCircle, AlertCircle } from 'lucide-react';
+import { validateBid } from '@/lib/validation';
+
+import Image from 'next/image';
 
 export function PresentationView() {
     const { state } = useAuction();
@@ -17,7 +20,7 @@ export function PresentationView() {
     const currencyUnit = state.config.currencyUnit || 'Lakhs';
 
     const [showResult, setShowResult] = useState<'sold' | 'unsold' | null>(null);
-    const [resultData, setResultData] = useState<{ playerName: string, teamName?: string, price?: number } | null>(null);
+    const [resultData, setResultData] = useState<{ playerName: string, teamName?: string, price?: number, teamLogo?: string } | null>(null);
 
     const prevHistoryLen = useRef(auction.history.length);
     const prevPlayers = useRef(players);
@@ -43,7 +46,8 @@ export function PresentationView() {
                 setResultData({
                     playerName: player.name,
                     teamName: team.name,
-                    price: latestSold.soldPrice
+                    price: latestSold.soldPrice,
+                    teamLogo: team.logoUrl
                 });
                 setShowResult('sold');
                 setTimeout(() => setShowResult(null), 5000);
@@ -77,11 +81,14 @@ export function PresentationView() {
 
             {/* 1. BROADCAST HEADER */}
             <header className="flex justify-between items-center border-b border-white/10 pb-2">
-                <div className="flex flex-col">
-                    <h1 className="text-3xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text py-0.5 tracking-tighter">
-                        {state.config.tournamentName}
-                    </h1>
-                    <span className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Official Auction Broadcast</span>
+                <div className="flex items-center gap-4">
+                    <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg shadow-lg" />
+                    <div className="flex flex-col">
+                        <h1 className="text-3xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text py-0.5 tracking-tighter">
+                            {state.config.tournamentName}
+                        </h1>
+                        <span className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Official Auction Broadcast</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="px-3 py-1 bg-red-600 rounded-md font-black text-[10px] tracking-tighter flex items-center gap-2 animate-pulse">
@@ -128,7 +135,7 @@ export function PresentationView() {
                                         </div>
                                         <div className="flex flex-col gap-0">
                                             <div className="text-slate-500 uppercase text-[9px] font-black tracking-widest">Base Price</div>
-                                            <div className="text-2xl font-bold text-emerald-400 font-mono">{formatCurrency(currentPlayer.basePrice, currencyUnit)}</div>
+                                            <div className="text-2xl font-bold text-emerald-400 font-mono">{formatCurrency(getEffectiveBasePrice(currentPlayer, state.config.rules), currencyUnit)}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -160,16 +167,50 @@ export function PresentationView() {
                                         </div>
 
                                         {lastBidder ? (
-                                            <motion.div
-                                                initial={{ y: 10, opacity: 0 }}
-                                                animate={{ y: 0, opacity: 1 }}
-                                                className="flex flex-col items-center"
-                                            >
-                                                <div className="text-slate-400 uppercase text-[10px] font-bold tracking-widest mb-1">Current Bid by</div>
-                                                <div className="px-5 py-1.5 bg-blue-600 rounded-full text-xl font-black text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]">
-                                                    {lastBidder.name}
+                                            <div className="space-y-4">
+                                                <motion.div
+                                                    initial={{ y: 10, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    className="flex flex-col items-center"
+                                                >
+                                                    <div className="text-slate-400 uppercase text-[10px] font-bold tracking-widest mb-1">Current Bid by</div>
+                                                    <div className="px-5 py-1.5 bg-blue-600 rounded-full text-xl font-black text-white shadow-[0_0_30px_rgba(37,99,235,0.4)]">
+                                                        {lastBidder.name}
+                                                    </div>
+                                                </motion.div>
+
+                                                {/* Ineligible Teams Display */}
+                                                <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
+                                                    {teams.map(t => {
+                                                        const activePlayer = players.find(p => p.id === currentPlayerId);
+                                                        if (!activePlayer) return null;
+                                                        const validation = validateBid(
+                                                            t,
+                                                            activePlayer,
+                                                            currentBid + 1, // Any progress is impossible if they fail base + 1
+                                                            state.config.rules,
+                                                            players,
+                                                            state.config.categoryLabels,
+                                                            state.config.categoryOptions
+                                                        );
+
+                                                        if (!validation.allowed && lastBidderTeamId !== t.id) {
+                                                            return (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, scale: 0.8 }}
+                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                    key={t.id}
+                                                                    className="flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[9px] font-black uppercase tracking-tighter text-red-400"
+                                                                >
+                                                                    <XCircle className="w-2.5 h-2.5" />
+                                                                    {t.name} Out
+                                                                </motion.div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })}
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         ) : (
                                             <div className="text-slate-500 text-sm font-bold italic animate-pulse">Waiting for bids...</div>
                                         )}
@@ -206,7 +247,7 @@ export function PresentationView() {
                     {auction.history.slice(0, 2).map((item, idx) => {
                         const p = players.find(player => player.id === item.playerId);
                         const t = teams.find(team => team.id === item.soldToTeamId);
-                        if (!p || !t) return null;
+                        if (!p || !t || p.status !== 'Sold') return null;
                         return (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -215,8 +256,12 @@ export function PresentationView() {
                                 key={item.playerId}
                                 className="flex-1 bg-slate-900/40 border border-white/5 rounded-xl p-3 flex items-center gap-4 group hover:bg-slate-900/60 transition-colors"
                             >
-                                <div className="w-12 h-12 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-500/20">
-                                    <Trophy className="w-6 h-6 text-blue-400" />
+                                <div className="w-12 h-12 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-500/20 overflow-hidden shrink-0">
+                                    {t.logoUrl ? (
+                                        <Image src={t.logoUrl} alt={t.name} width={48} height={48} className="object-cover" />
+                                    ) : (
+                                        <Trophy className="w-6 h-6 text-blue-400" />
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sold To {t.name}</div>
@@ -262,13 +307,24 @@ export function PresentationView() {
                                 >
                                     <div className="p-3 flex flex-col h-full gap-2">
                                         <div className="flex justify-between items-start">
-                                            <div className="max-w-[70%]">
-                                                <h4 className="text-sm font-black uppercase tracking-tight truncate text-white">
-                                                    {team.name}
-                                                </h4>
-                                                <div className="text-[8px] text-slate-500 font-bold uppercase">Purse</div>
-                                                <div className="text-base font-black text-emerald-400 leading-none">
-                                                    {formatCurrency(team.remainingBudget, currencyUnit)}
+                                            <div className="flex items-center gap-2 max-w-[80%]">
+                                                {team.logoUrl ? (
+                                                    <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 bg-black/20 shrink-0">
+                                                        <Image src={team.logoUrl} alt={team.name} fill className="object-cover" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 text-slate-500 font-bold uppercase text-xs shrink-0">
+                                                        {team.name.charAt(0)}
+                                                    </div>
+                                                )}
+                                                <div className="min-w-0">
+                                                    <h4 className="text-sm font-black uppercase tracking-tight truncate text-white">
+                                                        {team.name}
+                                                    </h4>
+                                                    <div className="text-[8px] text-slate-500 font-bold uppercase">Purse</div>
+                                                    <div className="text-base font-black text-emerald-400 leading-none">
+                                                        {formatCurrency(team.remainingBudget, currencyUnit)}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -339,8 +395,14 @@ export function PresentationView() {
                                     />
                                 ))}
 
-                                <div className="w-24 h-24 bg-yellow-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(234,179,8,0.5)]">
-                                    <Trophy className="w-12 h-12 text-slate-900" />
+                                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(255,255,255,0.3)] overflow-hidden relative">
+                                    {resultData.teamLogo ? (
+                                        <Image src={resultData.teamLogo} alt={resultData.teamName || "Team"} fill className="object-cover" />
+                                    ) : (
+                                        <div className="text-4xl font-black text-slate-800">
+                                            {resultData.teamName?.charAt(0)}
+                                        </div>
+                                    )}
                                 </div>
                                 <h2 className="text-2xl font-black text-yellow-500 uppercase tracking-[0.3em] mb-2">Sold</h2>
                                 <h1 className="text-7xl font-black text-white uppercase tracking-tighter mb-6 leading-none">
@@ -348,8 +410,15 @@ export function PresentationView() {
                                 </h1>
                                 <div className="space-y-1">
                                     <div className="text-slate-400 uppercase text-xs font-bold tracking-[0.2em]">Acquired by</div>
-                                    <div className="px-8 py-3 bg-blue-600 rounded-2xl text-4xl font-black text-white shadow-2xl border-2 border-white/10">
-                                        {resultData.teamName}
+                                    <div className="flex items-center gap-4 px-8 py-3 bg-blue-600 rounded-2xl shadow-2xl border-2 border-white/10">
+                                        {resultData.teamLogo && (
+                                            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/20 bg-black/20">
+                                                <Image src={resultData.teamLogo} alt={resultData.teamName || ""} fill className="object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="text-4xl font-black text-white">
+                                            {resultData.teamName}
+                                        </div>
                                     </div>
                                     <div className="text-4xl font-bold text-emerald-400 font-mono mt-4">
                                         {formatCurrency(resultData.price || 0, currencyUnit)}

@@ -8,13 +8,16 @@ import { PlayerSpotlight } from "@/components/auction/player-spotlight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Gavel, XCircle, CheckCircle2, User, RotateCcw, Search, ChevronLeft } from "lucide-react";
+import { Gavel, XCircle, CheckCircle2, User, RotateCcw, Search, ChevronLeft, AlertCircle } from "lucide-react";
 import { Player, ROLES } from "@/lib/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, getEffectiveBasePrice } from "@/lib/format";
+import { validateBid } from "@/lib/validation";
+import { useToast } from "@/components/ui/toast";
 
 export default function AuctionPage() {
     const { state, dispatch } = useAuction();
+    const { toast } = useToast();
     const { auction, players, teams } = state;
     const currencyUnit = state.config.currencyUnit || 'Lakhs';
 
@@ -73,107 +76,24 @@ export default function AuctionPage() {
         const team = teams.find(t => t.id === teamId);
         if (!team || !activePlayer) return;
 
-        const rules = state.config.rules;
-        const playersInTeam = team.players.map(pId => players.find(p => p.id === pId)).filter(Boolean) as Player[];
+        const result = validateBid(
+            team,
+            activePlayer,
+            amount,
+            state.config.rules,
+            players,
+            state.config.categoryLabels,
+            state.config.categoryOptions
+        );
 
-        // 1. Max Players Check
-        if (rules.maxPlayers && team.players.length >= rules.maxPlayers) {
-            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxPlayers} players.`);
-            return;
-        }
-
-        // 2. Role Specific Max Check
-        const role = activePlayer.role;
-        const roleCounts = {
-            'Batsman': playersInTeam.filter(p => p.role === 'Batsman').length,
-            'Bowler': playersInTeam.filter(p => p.role === 'Bowler').length,
-            'All-Rounder': playersInTeam.filter(p => p.role === 'All-Rounder').length,
-            'Wicket Keeper': playersInTeam.filter(p => p.role === 'Wicket Keeper').length,
-        };
-
-        if (role === 'Batsman' && rules.maxBatsmen && roleCounts['Batsman'] >= rules.maxBatsmen) {
-            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBatsmen} Batsmen.`);
-            return;
-        }
-        if (role === 'Bowler' && rules.maxBowlers && roleCounts['Bowler'] >= rules.maxBowlers) {
-            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxBowlers} Bowlers.`);
-            return;
-        }
-        if (role === 'All-Rounder' && rules.maxAllRounders && roleCounts['All-Rounder'] >= rules.maxAllRounders) {
-            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxAllRounders} All-Rounders.`);
-            return;
-        }
-        if (role === 'Wicket Keeper' && rules.maxWicketKeepers && roleCounts['Wicket Keeper'] >= rules.maxWicketKeepers) {
-            alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.maxWicketKeepers} Wicket Keepers.`);
-            return;
-        }
-
-        // 3. Minimum Requirements "Impossible" Check
-        // If there's a Max Players limit, we must ensure enough slots remain for other mandatory role minimums
-        if (rules.maxPlayers) {
-            const slotsAfterThis = rules.maxPlayers - (team.players.length + 1);
-
-            // Calculate how many MORE of each OTHER role is mandatory
-            let mandatoryOtherRoles = 0;
-
-            // Check Batsmen min (if not the current player being bid on)
-            if (rules.minBatsmen) {
-                const current = role === 'Batsman' ? roleCounts['Batsman'] + 1 : roleCounts['Batsman'];
-                mandatoryOtherRoles += Math.max(0, rules.minBatsmen - current);
-            }
-            // Check Bowlers min
-            if (rules.minBowlers) {
-                const current = role === 'Bowler' ? roleCounts['Bowler'] + 1 : roleCounts['Bowler'];
-                mandatoryOtherRoles += Math.max(0, rules.minBowlers - current);
-            }
-            // Check All-Rounders min
-            if (rules.minAllRounders) {
-                const current = role === 'All-Rounder' ? roleCounts['All-Rounder'] + 1 : roleCounts['All-Rounder'];
-                mandatoryOtherRoles += Math.max(0, rules.minAllRounders - current);
-            }
-            // Check Wicket Keepers min
-            if (rules.minWicketKeepers) {
-                const current = role === 'Wicket Keeper' ? roleCounts['Wicket Keeper'] + 1 : roleCounts['Wicket Keeper'];
-                mandatoryOtherRoles += Math.max(0, rules.minWicketKeepers - current);
-            }
-
-            if (mandatoryOtherRoles > slotsAfterThis) {
-                alert(`Rule Violation: Buying this ${role} leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherRoles} more players of other roles to meet the minimum requirements.`);
-                return;
-            }
-        }
-
-        // 4. Category Specific Max Check
-        if (activePlayer.categories && rules.categoryRules) {
-            for (const [label, cat] of Object.entries(activePlayer.categories)) {
-                if (rules.categoryRules[cat]?.max) {
-                    const currentCatCount = playersInTeam.filter(p => p.categories?.[label] === cat).length;
-                    if (currentCatCount >= rules.categoryRules[cat].max!) {
-                        alert(`Rule Violation: Team ${team.name} already has the maximum of ${rules.categoryRules[cat].max} ${cat} players.`);
-                        return;
-                    }
-                }
-            }
-        }
-
-        // 5. Category Minimum Requirements "Impossible" Check
-        if (rules.maxPlayers && rules.categoryRules) {
-            const slotsAfterThis = rules.maxPlayers - (team.players.length + 1);
-            let mandatoryOtherCategories = 0;
-
-            Object.entries(rules.categoryRules).forEach(([cat, catRule]) => {
-                if (catRule.min) {
-                    // Check if this category exists in any label for any team player
-                    const currentCatCount = playersInTeam.filter(p => p.categories && Object.values(p.categories).includes(cat)).length;
-                    const nextCatCount = activePlayer.categories && Object.values(activePlayer.categories).includes(cat) ? currentCatCount + 1 : currentCatCount;
-                    mandatoryOtherCategories += Math.max(0, catRule.min - nextCatCount);
-                }
+        if (!result.allowed) {
+            toast(result.reason || "Rule Violation", {
+                type: 'error',
+                description: result.minRequiredBudget !== undefined && result.remainingPurse !== undefined
+                    ? `Purse: ${formatCurrency(result.remainingPurse, currencyUnit)}\nRequired for Rules: ${formatCurrency(result.minRequiredBudget, currencyUnit)}`
+                    : undefined
             });
-
-            if (mandatoryOtherCategories > slotsAfterThis) {
-                alert(`Rule Violation: Buying this player leaves only ${slotsAfterThis} slots, but you still need ${mandatoryOtherCategories} more players of other categories to meet the minimum requirements.`);
-                return;
-            }
+            return;
         }
 
         dispatch({ type: 'PLACE_BID', payload: { teamId, amount } });
@@ -221,7 +141,7 @@ export default function AuctionPage() {
             <div className="container mx-auto p-6 space-y-8 pb-20">
 
                 <div className="flex items-center gap-4">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text py-2">
+                    <h1 className="text-3xl font-black tracking-tight bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text glow-text uppercase py-2">
                         Waiting Room
                     </h1>
                     <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm font-mono border border-slate-700">
@@ -301,7 +221,7 @@ export default function AuctionPage() {
                                     </span>
                                 )}
                                 <p className="text-xs font-mono mt-1 bg-slate-900 px-2 py-1 rounded inline-block text-slate-300">
-                                    Base: {formatCurrency(player.basePrice, currencyUnit)}
+                                    Base: {formatCurrency(getEffectiveBasePrice(player, state.config.rules), currencyUnit)}
                                 </p>
                             </div>
                             <Button className="w-full mt-auto bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-600/50">
