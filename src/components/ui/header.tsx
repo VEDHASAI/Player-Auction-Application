@@ -15,6 +15,7 @@ import { asset } from '@/utils/assetbasePath';
 
 export function Header() {
     const pathname = usePathname();
+    if (pathname?.startsWith('/presentation')) return null;
 
     const navItems = [
         { name: 'Dashboard', href: '/', icon: HomeIcon },

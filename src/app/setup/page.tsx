@@ -23,6 +23,8 @@ export default function SetupPage() {
     const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
     const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
     const [showTemplateConfirm, setShowTemplateConfirm] = useState(false);
+    const [showDeleteAllTeamsConfirm, setShowDeleteAllTeamsConfirm] = useState(false);
+    const [showDeleteAllPlayersConfirm, setShowDeleteAllPlayersConfirm] = useState(false);
 
     // Team Form State
     const [teamName, setTeamName] = useState('');
@@ -302,8 +304,19 @@ export default function SetupPage() {
                     </Card>
 
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle>Teams List ({state.teams.length})</CardTitle>
+                            {state.teams.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowDeleteAllTeamsConfirm(true)}
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2 text-xs"
+                                >
+                                    <Trash2 className="w-3 h-3 mr-1.5" />
+                                    Delete All
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
@@ -433,8 +446,19 @@ export default function SetupPage() {
                     </Card>
 
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle>Players List ({state.players.length})</CardTitle>
+                            {state.players.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowDeleteAllPlayersConfirm(true)}
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 px-2 text-xs"
+                                >
+                                    <Trash2 className="w-3 h-3 mr-1.5" />
+                                    Delete All
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -483,6 +507,32 @@ export default function SetupPage() {
                 confirmText="Download Anyway"
                 cancelText="Not Now"
                 variant="info"
+            />
+
+            <ConfirmDialog
+                isOpen={showDeleteAllTeamsConfirm}
+                title="Delete All Teams?"
+                description="This will permanently remove all teams and reset the current auction state. This action cannot be undone."
+                onConfirm={() => {
+                    dispatch({ type: 'DELETE_ALL_TEAMS' });
+                    setShowDeleteAllTeamsConfirm(false);
+                }}
+                onCancel={() => setShowDeleteAllTeamsConfirm(false)}
+                confirmText="Delete Everything"
+                variant="danger"
+            />
+
+            <ConfirmDialog
+                isOpen={showDeleteAllPlayersConfirm}
+                title="Delete All Players?"
+                description="This will permanently remove all players and reset the current auction state. This action cannot be undone."
+                onConfirm={() => {
+                    dispatch({ type: 'DELETE_ALL_PLAYERS' });
+                    setShowDeleteAllPlayersConfirm(false);
+                }}
+                onCancel={() => setShowDeleteAllPlayersConfirm(false)}
+                confirmText="Delete Everything"
+                variant="danger"
             />
         </div>
     );

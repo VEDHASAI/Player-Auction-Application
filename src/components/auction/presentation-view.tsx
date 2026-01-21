@@ -80,68 +80,83 @@ export function PresentationView() {
 
     console.log(teams, "teams")
 
-    return (
-        <div className="h-screen bg-slate-950 text-white p-4 overflow-hidden font-sans flex flex-col gap-4">
+    const soldPlayers = players.filter(p => p.status === 'Sold');
+    const totalSpent = teams.reduce((acc, t) => acc + (t.totalBudget - t.remainingBudget), 0);
+    const totalRemaining = teams.reduce((acc, t) => acc + t.remainingBudget, 0);
 
-            {/* 1. BROADCAST HEADER */}
-            <header className="flex justify-between items-center border-b border-white/10 pb-2">
-                <div className="flex items-center gap-4">
-                    {/* <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg shadow-lg" /> */}
-                    <div className="flex flex-col">
-                        <h1 className="text-3xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text py-0.5 tracking-tighter">
-                            {state.config.tournamentName}
-                        </h1>
-                        <span className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Official Auction Broadcast</span>
+    return (
+        <div className="h-screen bg-slate-950 text-white p-2 overflow-hidden font-sans flex flex-col gap-2">
+
+            {/* QUICK STATS & TOURNAMENT NAME */}
+            <div className="flex justify-between items-center bg-slate-900/40 border border-white/5 rounded-lg px-3 py-1.5 backdrop-blur-md shrink-0">
+                <div className="flex flex-col">
+                    <h1 className="text-lg font-black bg-linear-to-r from-blue-400 via-indigo-400 to-purple-500 text-transparent bg-clip-text tracking-tighter uppercase leading-none mb-0.5">
+                        {state.config.tournamentName}
+                    </h1>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1 h-1 bg-red-600 rounded-full animate-pulse" />
+                        <span className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[7px]">Auction Live</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="px-3 py-1 bg-red-600 rounded-md font-black text-[10px] tracking-tighter flex items-center gap-2 animate-pulse">
-                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                        LIVE
+
+                <div className="flex gap-2">
+                    <div className="bg-white/5 border border-white/5 rounded-lg px-2 py-1 text-center min-w-[70px]">
+                        <div className="text-[6px] text-slate-500 font-black uppercase tracking-widest mb-0">Players Sold</div>
+                        <div className="text-xs font-black text-white leading-tight">{soldPlayers.length} / {players.length}</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-lg px-2 py-1 text-center min-w-[90px]">
+                        <div className="text-[6px] text-slate-500 font-black uppercase tracking-widest mb-0">Total Spent</div>
+                        <div className="text-xs font-black text-blue-400 leading-tight">{formatCurrency(totalSpent, currencyUnit)}</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-lg px-2 py-1 text-center min-w-[90px]">
+                        <div className="text-[6px] text-slate-500 font-black uppercase tracking-widest mb-0">Money Remaining</div>
+                        <div className="text-xs font-black text-emerald-400 leading-tight">{formatCurrency(totalRemaining, currencyUnit)}</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-lg px-2 py-1 text-center min-w-[50px]">
+                        <div className="text-[6px] text-slate-500 font-black uppercase tracking-widest mb-0">Teams</div>
+                        <div className="text-xs font-black text-purple-400 leading-tight">{teams.length}</div>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* TOP ROW: MAIN STAGE + RECENT SALES */}
-            <section className="flex gap-4 min-h-[260px]">
+            <section className="flex gap-2 h-[220px] shrink-0">
                 {/* 2. MAIN AUCTION STAGE (LEFT) */}
                 <div className="flex-[3] min-w-0">
-                    <Card className="bg-slate-900/40 border-white/10 backdrop-blur-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] h-full">
+                    <Card className="bg-slate-900/40 border-white/10 backdrop-blur-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.3)] h-full">
                         <AnimatePresence mode="wait">
                             {currentPlayer ? (
                                 <motion.div
                                     key={currentPlayer.id}
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
+                                    exit={{ opacity: 0, y: -10 }}
                                     className="flex h-full"
                                 >
                                     {/* PLAYER INFO (LEFT) */}
-                                    <div className="w-[45%] p-4 flex items-center gap-4 border-r border-white/5 bg-gradient-to-r from-blue-600/10 to-transparent">
+                                    <div className="w-[40%] p-3 flex items-center gap-3 border-r border-white/5 bg-linear-to-r from-blue-600/10 to-transparent">
                                         <div className="relative">
-                                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-3xl font-black shadow-[0_0_30px_rgba(37,99,235,0.3)] border-4 border-white/10">
+                                            <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-indigo-700 flex items-center justify-center text-2xl font-black shadow-[0_0_30px_rgba(37,99,235,0.3)] border-2 border-white/10 shrink-0">
                                                 {currentPlayer.name.charAt(0)}
                                             </div>
                                         </div>
-                                        <div className="space-y-1 min-w-0">
-                                            <div className="space-y-0.5">
-                                                <h2 className="text-2xl font-black tracking-tighter text-white uppercase leading-tight truncate">
-                                                    {currentPlayer.name}
-                                                </h2>
-                                                <div className="flex flex-wrap gap-1 items-center">
-                                                    <div className="inline-block bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 rounded text-[7px] font-black text-blue-400 uppercase tracking-[0.2em]">
-                                                        {currentPlayer.role}
-                                                    </div>
-                                                    {currentPlayer.categories && Object.entries(currentPlayer.categories).map(([label, val]) => (
-                                                        <div key={label} className="inline-block bg-purple-500/20 border border-purple-500/30 px-1.5 py-0.5 rounded text-[7px] font-black text-purple-400 uppercase tracking-[0.2em]">
-                                                            {val}
-                                                        </div>
-                                                    ))}
+                                        <div className="space-y-0.5 min-w-0">
+                                            <h2 className="text-xl font-black tracking-tighter text-white uppercase leading-tight truncate">
+                                                {currentPlayer.name}
+                                            </h2>
+                                            <div className="flex flex-wrap gap-1 items-center">
+                                                <div className="inline-block bg-blue-500/20 border border-blue-500/30 px-1 py-0.5 rounded text-[6px] font-black text-blue-400 uppercase tracking-[0.2em]">
+                                                    {currentPlayer.role}
                                                 </div>
+                                                {currentPlayer.categories && Object.entries(currentPlayer.categories).map(([label, val]) => (
+                                                    <div key={label} className="inline-block bg-purple-500/20 border border-purple-500/30 px-1 py-0.5 rounded text-[6px] font-black text-purple-400 uppercase tracking-[0.2em]">
+                                                        {val}
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <div className="flex flex-col gap-0 mt-2">
-                                                <div className="text-slate-500 uppercase text-[8px] font-black tracking-widest">Base Price</div>
-                                                <div className="text-xl font-bold text-emerald-400 font-mono">{formatCurrency(getEffectiveBasePrice(currentPlayer, state.config.rules), currencyUnit)}</div>
+                                            <div className="flex flex-col gap-0 mt-1">
+                                                <div className="text-slate-500 uppercase text-[6px] font-black tracking-widest">Base Price</div>
+                                                <div className="text-lg font-bold text-emerald-400 font-mono leading-none">{formatCurrency(getEffectiveBasePrice(currentPlayer, state.config.rules || {}), currencyUnit)}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -211,41 +226,40 @@ export function PresentationView() {
                 </div>
 
                 {/* 3. RECENT SALES HIGHLIGHTS (RIGHT COLUMN) */}
-                <div className="flex-1 min-w-[320px] flex flex-col">
-                    <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Recent Sales</h3>
+                <div className="flex-1 min-w-[300px] flex flex-col">
+                    <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Recent Sales</h3>
                         <div className="h-px flex-1 bg-white/5"></div>
                     </div>
 
-                    <div className="flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar-mini pr-1">
+                    <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto custom-scrollbar-mini pr-1">
                         {auction.history.slice(0, 3).map((item, idx) => {
                             const p = players.find(player => player.id === item.playerId);
                             const t = teams.find(team => team.id === item.soldToTeamId);
                             if (!p || !t || p.status !== 'Sold') return null;
                             return (
                                 <motion.div
-                                    initial={{ opacity: 0, x: 20 }}
+                                    initial={{ opacity: 0, x: 10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.1 }}
+                                    transition={{ delay: idx * 0.05 }}
                                     key={item.playerId}
-                                    className="bg-slate-900/40 border border-white/5 rounded-xl p-2.5 flex items-center gap-3 group hover:bg-slate-900/60 transition-colors"
+                                    className="bg-slate-900/40 border border-white/5 rounded-lg p-2 flex items-center gap-2 group hover:bg-slate-900/60 transition-colors"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-500/20 overflow-hidden shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-500/20 overflow-hidden shrink-0">
                                         {t.logoUrl ? (
-                                            <Image src={t.logoUrl} alt={t.name} width={40} height={40} className="object-cover" />
+                                            <Image src={t.logoUrl} alt={t.name} width={32} height={32} className="object-cover" />
                                         ) : (
-                                            <Trophy className="w-5 h-5 text-blue-400" />
+                                            <Trophy className="w-4 h-4 text-blue-400" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest truncate">Sold To {t.name}</div>
-                                        <div className="text-sm font-black text-white uppercase truncate tracking-tight">{p.name}</div>
+                                        <div className="text-[7px] font-black text-slate-500 uppercase tracking-widest truncate">Sold To {t.name}</div>
+                                        <div className="text-[11px] font-black text-white uppercase truncate tracking-tight">{p.name}</div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-xs font-black text-emerald-400 font-mono">
+                                        <div className="text-[11px] font-black text-emerald-400 font-mono">
                                             {formatCurrency(item.soldPrice, currencyUnit)}
                                         </div>
-                                        <div className="text-[7px] text-slate-500 font-bold uppercase tracking-tighter">Final</div>
                                     </div>
                                 </motion.div>
                             );
@@ -261,8 +275,8 @@ export function PresentationView() {
 
             {/* 4. TEAM STANDINGS (BOTTOM GRID) */}
             <section className="flex-1 overflow-hidden flex flex-col">
-                <div className="flex items-center gap-4 mb-3">
-                    <h3 className="text-lg font-black uppercase tracking-widest text-slate-500">Team Standings</h3>
+                <div className="flex items-center gap-3 mb-1.5">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500">Team Standings</h3>
                     <div className="h-px flex-1 bg-white/5"></div>
                 </div>
 
@@ -297,19 +311,19 @@ export function PresentationView() {
                                             )}
 
                                             <div className="w-full">
-                                                <h4 className="text-sm font-black uppercase tracking-tight truncate text-white mb-1">
+                                                <h4 className="text-[11px] font-black uppercase tracking-tight truncate text-white mb-0.5">
                                                     {team.name}
                                                 </h4>
-                                                <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-2 mt-1">
+                                                <div className="grid grid-cols-2 gap-2 border-t border-white/5 pt-1 mt-0.5">
                                                     <div>
-                                                        <div className="text-[8px] text-slate-500 font-bold uppercase mb-0.5">Purse</div>
-                                                        <div className="text-sm font-black text-emerald-400 leading-none">
+                                                        <div className="text-[7px] text-slate-500 font-bold uppercase mb-0">Purse</div>
+                                                        <div className="text-[11px] font-black text-emerald-400 leading-none">
                                                             {formatCurrency(team.remainingBudget, currencyUnit)}
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <div className="text-[8px] text-slate-500 font-bold uppercase mb-0.5">Reserve</div>
-                                                        <div className="text-sm font-black text-emerald-100/70 leading-none">
+                                                        <div className="text-[7px] text-slate-500 font-bold uppercase mb-0">Reserve</div>
+                                                        <div className="text-[11px] font-black text-emerald-100/70 leading-none">
                                                             {formatCurrency(calculateReserveMoney(team, (state.config || {}) as any, players), currencyUnit)}
                                                         </div>
                                                     </div>

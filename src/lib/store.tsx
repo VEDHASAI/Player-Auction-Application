@@ -75,6 +75,8 @@ type Action =
     }
     | { type: 'CANCEL_AUCTION_ROUND' }
     | { type: 'RELEASE_PLAYER'; payload: { playerId: string; teamId: string } }
+    | { type: 'DELETE_ALL_TEAMS' }
+    | { type: 'DELETE_ALL_PLAYERS' }
     | { type: 'RESET_AUCTION' };
 
 // Reducer
@@ -149,8 +151,33 @@ function auctionReducer(state: AppState, action: Action): AppState {
                 players: state.players.map(p => p.id === action.payload.id ? action.payload : p)
             };
 
-        case 'DELETE_PLAYER':
-            return { ...state, players: state.players.filter(p => p.id !== action.payload) };
+        case 'DELETE_PLAYER': {
+            const playerId = action.payload;
+            const playerToDelete = state.players.find(p => p.id === playerId);
+
+            let newState = { ...state };
+
+            // If player was sold, refund the team
+            if (playerToDelete?.status === 'Sold' && playerToDelete.soldToTeamId && playerToDelete.soldPrice) {
+                const teamId = playerToDelete.soldToTeamId;
+                const price = playerToDelete.soldPrice;
+                newState.teams = state.teams.map(t => {
+                    if (t.id === teamId) {
+                        return {
+                            ...t,
+                            remainingBudget: t.remainingBudget + price,
+                            players: t.players.filter(pId => pId !== playerId)
+                        };
+                    }
+                    return t;
+                });
+            }
+
+            return {
+                ...newState,
+                players: state.players.filter(p => p.id !== playerId)
+            };
+        }
 
         case 'START_AUCTION_FOR_PLAYER': {
             const player = state.players.find(p => p.id === action.payload);
@@ -359,6 +386,31 @@ function auctionReducer(state: AppState, action: Action): AppState {
                     bidIncrements: action.payload.bidIncrements,
                     categoryBidIncrements: action.payload.categoryBidIncrements
                 }
+            };
+
+        case 'DELETE_ALL_TEAMS':
+            return {
+                ...state,
+                teams: [],
+                players: state.players.map(p => ({
+                    ...p,
+                    status: 'Available',
+                    soldPrice: undefined,
+                    soldToTeamId: undefined
+                })),
+                auction: initialState.auction
+            };
+
+        case 'DELETE_ALL_PLAYERS':
+            return {
+                ...state,
+                players: [],
+                teams: state.teams.map(t => ({
+                    ...t,
+                    remainingBudget: t.totalBudget,
+                    players: []
+                })),
+                auction: initialState.auction
             };
 
         case 'RESET_AUCTION':
