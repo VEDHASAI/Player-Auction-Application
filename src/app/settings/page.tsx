@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Save, Trash2, User, Coins, Download, Pencil, Gavel } from 'lucide-react';
+import { Save, Trash2, User, Coins, Download, Pencil, Gavel, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import Papa from 'papaparse';
@@ -249,13 +249,38 @@ export default function SettingsPage() {
 
                                 {/* Bid Increments Configuration */}
                                 <div className="p-4 bg-slate-900/30 rounded-lg border border-slate-800 space-y-3 shadow-inner">
-                                    <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2">
-                                        <Gavel className="w-4 h-4" /> Bid Increments (₹)
-                                    </h4>
-                                    <div className="grid grid-cols-5 gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Gavel className="w-4 h-4" /> Bid Increments (₹)
+                                        </h4>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setBidIncrements([...bidIncrements, (bidIncrements[bidIncrements.length - 1] || 1000000) + 1000000])}
+                                            className="h-7 text-[10px] font-black uppercase border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                                        >
+                                            <Plus className="w-3 h-3 mr-1" /> Add Slot
+                                        </Button>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                         {bidIncrements.map((val, idx) => (
-                                            <div key={idx} className="space-y-1">
-                                                <label className="text-[9px] text-slate-500 font-black uppercase">Slot {idx + 1}</label>
+                                            <div key={idx} className="space-y-1 group relative">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[9px] text-slate-500 font-black uppercase">Slot {idx + 1}</label>
+                                                    {bidIncrements.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const newIncrements = bidIncrements.filter((_, i) => i !== idx);
+                                                                setBidIncrements(newIncrements);
+                                                            }}
+                                                            className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <Input
                                                     type="number"
                                                     value={val}
@@ -269,7 +294,7 @@ export default function SettingsPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 italic">Configure the 5 quick-bid increment buttons available in the auction room.</p>
+                                    <p className="text-[10px] text-slate-500 italic">Configure the quick-bid increment buttons available in the auction room.</p>
                                 </div>
 
                                 {/* Dynamic Category Options Management */}

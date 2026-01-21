@@ -19,6 +19,7 @@ export interface Team {
   name: string;
   totalBudget: number;
   remainingBudget: number;
+  minRequiredBudget: number;
   players: string[]; // List of player IDs
   logoUrl?: string;
 }
