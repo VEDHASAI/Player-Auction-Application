@@ -47,7 +47,7 @@ export function PlayerSpotlight({ player, currentBid }: PlayerSpotlightProps) {
                     <div>
                         <div className="text-slate-500 text-[10px] font-medium uppercase tracking-widest">Base Price</div>
                         <div className="text-xl text-slate-300 font-mono">
-                            {formatCurrency(getEffectiveBasePrice(player, state.config.rules), currencyUnit)}
+                            {formatCurrency(getEffectiveBasePrice(player, state.config.rules || {}), currencyUnit)}
                         </div>
                     </div>
                     <div>

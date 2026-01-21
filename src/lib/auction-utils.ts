@@ -9,7 +9,7 @@ export function calculateMinRequiredBudget(
     activePlayer?: Player
 ): number {
     const playersInTeam = team.players.map(pId => allPlayers.find(p => p.id === pId)).filter(Boolean) as Player[];
-    const defBase = rules.defaultBasePrice || 2000000;
+    const defBase = rules?.defaultBasePrice || 2000000;
 
     const requirementLists: number[][] = [];
 
@@ -87,7 +87,7 @@ export function calculateReserveMoney(
 ): number {
     const minBudget = calculateMinRequiredBudget(
         team,
-        config.rules,
+        config.rules || {},
         allPlayers,
         config.categoryLabels || [],
         config.categoryOptions || {}

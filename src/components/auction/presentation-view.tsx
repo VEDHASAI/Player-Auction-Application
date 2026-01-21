@@ -310,7 +310,7 @@ export function PresentationView() {
                                                     <div>
                                                         <div className="text-[8px] text-slate-500 font-bold uppercase mb-0.5">Reserve</div>
                                                         <div className="text-sm font-black text-emerald-100/70 leading-none">
-                                                            {formatCurrency(calculateReserveMoney(team, state.config as any, players), currencyUnit)}
+                                                            {formatCurrency(calculateReserveMoney(team, (state.config || {}) as any, players), currencyUnit)}
                                                         </div>
                                                     </div>
                                                 </div>

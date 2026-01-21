@@ -83,7 +83,7 @@ export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId, bi
                             team,
                             activePlayer,
                             nextBidAmount,
-                            state.config.rules,
+                            state.config.rules || {},
                             state.players,
                             state.config.categoryLabels,
                             state.config.categoryOptions
@@ -122,7 +122,7 @@ export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId, bi
             {teams.some(t => {
                 const activePlayer = state.players.find(p => p.id === state.auction.currentPlayerId);
                 if (!activePlayer) return false;
-                const v = validateBid(t, activePlayer, currentBid + increment, state.config.rules, state.players, state.config.categoryLabels, state.config.categoryOptions);
+                const v = validateBid(t, activePlayer, currentBid + increment, state.config.rules || {}, state.players, state.config.categoryLabels, state.config.categoryOptions);
                 return !v.allowed && lastBidderTeamId !== t.id;
             }) && (
                     <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 flex flex-col gap-2 mt-4 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -134,11 +134,11 @@ export function BidConsole({ teams, currentBid, onPlaceBid, lastBidderTeamId, bi
                             {teams.filter(t => {
                                 const activePlayer = state.players.find(p => p.id === state.auction.currentPlayerId);
                                 if (!activePlayer) return false;
-                                const v = validateBid(t, activePlayer, currentBid + increment, state.config.rules, state.players, state.config.categoryLabels, state.config.categoryOptions);
+                                const v = validateBid(t, activePlayer, currentBid + increment, state.config.rules || {}, state.players, state.config.categoryLabels, state.config.categoryOptions);
                                 return !v.allowed && lastBidderTeamId !== t.id;
                             }).map(t => {
                                 const activePlayer = state.players.find(p => p.id === state.auction.currentPlayerId);
-                                const v = validateBid(t, activePlayer!, currentBid + increment, state.config.rules, state.players, state.config.categoryLabels, state.config.categoryOptions);
+                                const v = validateBid(t, activePlayer!, currentBid + increment, state.config.rules || {}, state.players, state.config.categoryLabels, state.config.categoryOptions);
                                 return (
                                     <div key={t.id} className="bg-slate-900/50 border border-slate-800 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 leading-none">
                                         <span className="font-black text-slate-200">{t.name}:</span>
