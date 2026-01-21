@@ -1,4 +1,5 @@
 import { Player, Team, SquadRules } from './types';
+import { calculateMinRequiredBudget } from './auction-utils';
 
 export interface ValidationResult {
     allowed: boolean;
@@ -105,62 +106,14 @@ export function validateBid(
     }
 
     // 6. Budget "Impossible" Check (Zip-Max Algorithm)
-    const minTotal = rules.minPlayers || 0;
-    const totalNeededAfterThis = Math.max(0, minTotal - (team.players.length + 1));
-    const requirementLists: number[][] = [];
-
-    // Category Requirements
-    categoryLabels.forEach(label => {
-        const list: number[] = [];
-        const options = categoryOptions[label] || [];
-        options.forEach(opt => {
-            const rule = rules.categoryRules?.[opt];
-            if (rule && rule.min) {
-                const currentCatCount = playersInTeam.filter(p => p.categories?.[label] === opt).length;
-                const nextCatCount = activePlayer.categories?.[label] === opt ? currentCatCount + 1 : currentCatCount;
-                const needed = Math.max(0, rule.min - nextCatCount);
-                const price = rule.basePrice || defBase;
-                for (let i = 0; i < needed; i++) list.push(price);
-            }
-        });
-        if (list.length > 0) {
-            list.sort((a, b) => b - a);
-            requirementLists.push(list);
-        }
-    });
-
-    // Role Requirements
-    const roleList: number[] = [];
-    const currentRoleCounts = { ...roleCounts } as any;
-    currentRoleCounts[role]++;
-    [
-        { key: 'minBatsmen', label: 'Batsman' },
-        { key: 'minBowlers', label: 'Bowler' },
-        { key: 'minAllRounders', label: 'All-Rounder' },
-        { key: 'minWicketKeepers', label: 'Wicket Keeper' }
-    ].forEach(check => {
-        const minVal = (rules as any)[check.key];
-        if (minVal) {
-            const needed = Math.max(0, minVal - (currentRoleCounts[check.label] || 0));
-            for (let i = 0; i < needed; i++) roleList.push(defBase);
-        }
-    });
-
-    if (roleList.length > 0) {
-        roleList.sort((a, b) => b - a);
-        requirementLists.push(roleList);
-    }
-
-    const maxNeededSlots = requirementLists.length > 0 ? Math.max(...requirementLists.map(l => l.length)) : 0;
-    let minRequiredBudget = 0;
-    for (let i = 0; i < maxNeededSlots; i++) {
-        const slotCosts = requirementLists.map(l => l[i] || 0);
-        minRequiredBudget += Math.max(...slotCosts);
-    }
-
-    if (totalNeededAfterThis > maxNeededSlots) {
-        minRequiredBudget += (totalNeededAfterThis - maxNeededSlots) * defBase;
-    }
+    const minRequiredBudget = calculateMinRequiredBudget(
+        team,
+        rules,
+        allPlayers,
+        categoryLabels,
+        categoryOptions,
+        activePlayer // Pass activePlayer to assume it's bought
+    );
 
     if (remainingPurse < minRequiredBudget) {
         return {
@@ -170,6 +123,6 @@ export function validateBid(
             remainingPurse
         };
     }
-
+    console.log('allowed-------', minRequiredBudget);
     return { allowed: true, remainingPurse, minRequiredBudget };
 }

@@ -61,3 +61,14 @@ body {
     text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
   }
 }
+
+/* Hide spin buttons for number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
