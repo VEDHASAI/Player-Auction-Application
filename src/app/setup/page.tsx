@@ -57,6 +57,7 @@ export default function SetupPage() {
                 name: teamName,
                 totalBudget: parseInt(teamBudget),
                 remainingBudget: 0, // Will be recalculated in reducer
+                minRequiredBudget: 0,
                 players: [], // Preserved in reducer
                 logoUrl: teamLogo || undefined,
             };
@@ -68,6 +69,7 @@ export default function SetupPage() {
                 name: teamName,
                 totalBudget: parseInt(teamBudget),
                 remainingBudget: parseInt(teamBudget),
+                minRequiredBudget: 0,
                 players: [],
                 logoUrl: teamLogo || undefined,
             };
