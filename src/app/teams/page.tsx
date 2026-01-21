@@ -103,7 +103,7 @@ export default function TeamsPage() {
                 {teams.map((team) => {
                     const teamPlayers = players.filter(p => p.soldToTeamId === team.id);
                     const spent = team.totalBudget - team.remainingBudget;
-                    const rules = state.config.rules;
+                    const rules = state.config.rules || {};
 
                     // Role Counts
                     const roles = {

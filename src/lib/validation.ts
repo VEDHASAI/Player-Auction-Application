@@ -18,7 +18,7 @@ export function validateBid(
     categoryOptions: Record<string, string[]> = {}
 ): ValidationResult {
     const playersInTeam = team.players.map(pId => allPlayers.find(p => p.id === pId)).filter(Boolean) as Player[];
-    const defBase = rules.defaultBasePrice || 2000000;
+    const defBase = rules?.defaultBasePrice || 2000000;
 
     // 1. Basic Budget Check
     if (bidAmount > team.remainingBudget) {
