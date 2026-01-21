@@ -80,7 +80,7 @@ export default function AuctionPage() {
             team,
             activePlayer,
             amount,
-            state.config.rules,
+            state.config.rules || {},
             players,
             state.config.categoryLabels,
             state.config.categoryOptions

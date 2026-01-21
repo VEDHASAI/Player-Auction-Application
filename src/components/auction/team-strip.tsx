@@ -37,7 +37,7 @@ export function TeamStrip({ teams, lastBidderTeamId, currentBid }: TeamStripProp
                             team,
                             activePlayer,
                             currentBid + 1, // Minimum increment assumption for eligibility check
-                            state.config.rules,
+                            state.config.rules || {},
                             state.players,
                             state.config.categoryLabels,
                             state.config.categoryOptions
