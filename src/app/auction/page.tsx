@@ -99,19 +99,41 @@ export default function AuctionPage() {
         dispatch({ type: 'PLACE_BID', payload: { teamId, amount } });
     };
 
-    const sellPlayer = () => {
-        if (!activePlayer || !auction.lastBidderTeamId) return;
+    const sellAtBasePrice = (teamId: string) => {
+        if (!activePlayer) return;
+        const resolvedBasePrice = getEffectiveBasePrice(activePlayer, state.config.rules);
 
-        const team = teams.find(t => t.id === auction.lastBidderTeamId);
-        const rules = state.config.rules;
-        if (team && rules) {
-            // Re-validate rules before selling (as a safety measure)
-            if (rules.maxPlayers && team.players.length >= rules.maxPlayers) {
-                alert(`Cannot Sell: Team ${team.name} has reached the maximum player limit.`);
+        const team = teams.find(t => t.id === teamId);
+        if (team) {
+            // Validate rules
+            const validation = validateBid(
+                team,
+                activePlayer,
+                resolvedBasePrice,
+                state.config.rules || {},
+                players,
+                state.config.categoryLabels,
+                state.config.categoryOptions
+            );
+
+            if (!validation.allowed) {
+                toast(validation.reason || "Rule Violation", { type: 'error' });
                 return;
             }
-            // (Role checks could be added here too, but placeBid should have caught them)
+
+            dispatch({
+                type: 'SELL_PLAYER',
+                payload: {
+                    playerId: activePlayer.id,
+                    teamId: team.id,
+                    amount: resolvedBasePrice
+                }
+            });
         }
+    };
+
+    const sellPlayer = () => {
+        if (!activePlayer || !auction.lastBidderTeamId) return;
 
         dispatch({
             type: 'SELL_PLAYER',
@@ -323,6 +345,7 @@ export default function AuctionPage() {
                         currentBid={auction.currentBid}
                         lastBidderTeamId={auction.lastBidderTeamId}
                         onPlaceBid={placeBid}
+                        onSellAtBase={sellAtBasePrice}
                         bidIncrements={playerBidIncrements}
                     />
                 </div>

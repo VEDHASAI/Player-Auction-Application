@@ -17,6 +17,15 @@ export function validateBid(
     categoryLabels: string[] = [],
     categoryOptions: Record<string, string[]> = {}
 ): ValidationResult {
+    // Debug Logging
+    console.log("validateBid inputs:", {
+        teamName: team.name,
+        bidAmount,
+        rules,
+        labels: categoryLabels,
+        activePlayerCat: activePlayer.categories
+    });
+
     const playersInTeam = team.players.map(pId => allPlayers.find(p => p.id === pId)).filter(Boolean) as Player[];
     const defBase = rules?.defaultBasePrice || 2000000;
 
